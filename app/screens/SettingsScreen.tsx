@@ -1,0 +1,128 @@
+import React from "react";
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+
+export function SettingsScreen({ family, onManageFamily, onLogout }) {
+	return (
+		<ScrollView contentContainerStyle={styles.content}>
+			<Text style={styles.eyebrow}>YOUR ACCOUNT</Text>
+			<Text style={styles.title}>Settings</Text>
+			<View style={styles.profile}>
+				<View style={styles.initial}>
+					<Text style={styles.initialText}>Y</Text>
+				</View>
+				<View>
+					<Text style={styles.name}>You</Text>
+					<Text style={styles.email}>you@example.com</Text>
+				</View>
+			</View>
+			<Text style={styles.group}>PREFERENCES</Text>
+			<Row
+				label="Reset password"
+				onPress={() =>
+					Alert.alert(
+						"Reset password",
+						"Connect this action to Firebase Auth sendPasswordResetEmail.",
+					)
+				}
+			/>
+			<Row
+				label="Dark appearance"
+				right={<Switch value={false} disabled trackColor={{ false: "#D4E2D9" }} />}
+			/>
+			<Text style={styles.group}>FAMILY</Text>
+			<Pressable onPress={onManageFamily} style={styles.familyCard}>
+				<View style={styles.familyMark}>
+					<Text style={styles.familyMarkText}>F</Text>
+				</View>
+				<View style={{ flex: 1 }}>
+					<Text style={styles.familyTitle}>Manage family</Text>
+					<Text style={styles.familySub}>{family.name}</Text>
+				</View>
+				<Text style={styles.arrow}>›</Text>
+			</Pressable>
+			<Text style={styles.group}>SESSION</Text>
+			<Pressable onPress={onLogout} style={styles.logout}>
+				<Text style={styles.logoutText}>Log out</Text>
+			</Pressable>
+		</ScrollView>
+	);
+}
+function Row({ label, onPress = undefined, right = undefined }) {
+	return (
+		<Pressable onPress={onPress} style={styles.row}>
+			<Text style={styles.rowLabel}>{label}</Text>
+			{right || <Text style={styles.arrow}>›</Text>}
+		</Pressable>
+	);
+}
+const styles = StyleSheet.create({
+	content: { padding: 22, paddingBottom: 105 },
+	eyebrow: {
+		fontSize: 10,
+		letterSpacing: 1.2,
+		fontWeight: "800",
+		color: "#6F8176",
+		marginTop: 8,
+	},
+	title: { fontSize: 29, fontWeight: "800", color: "#193126", marginTop: 7 },
+	profile: {
+		backgroundColor: "#FFF",
+		borderRadius: 17,
+		borderWidth: 1,
+		borderColor: "#E2ECE6",
+		padding: 15,
+		marginTop: 23,
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 12,
+	},
+	initial: {
+		height: 49,
+		width: 49,
+		borderRadius: 16,
+		backgroundColor: "#177A50",
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	initialText: { color: "#FFF", fontSize: 20, fontWeight: "800" },
+	name: { fontSize: 16, fontWeight: "800", color: "#1C3528" },
+	email: { fontSize: 13, color: "#74847A", marginTop: 3 },
+	group: {
+		fontSize: 10,
+		letterSpacing: 1.1,
+		fontWeight: "800",
+		color: "#728278",
+		marginTop: 28,
+		marginBottom: 8,
+	},
+	row: {
+		height: 57,
+		borderBottomWidth: 1,
+		borderColor: "#E3ECE6",
+		flexDirection: "row",
+		alignItems: "center",
+	},
+	rowLabel: { fontSize: 15, fontWeight: "700", color: "#294235", flex: 1 },
+	arrow: { fontSize: 26, color: "#91A097" },
+	familyCard: {
+		backgroundColor: "#E8F5ED",
+		padding: 15,
+		borderRadius: 17,
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 12,
+	},
+	familyMark: {
+		width: 43,
+		height: 43,
+		borderRadius: 13,
+		backgroundColor: "#CBE9D6",
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	familyMarkText: { fontSize: 17, fontWeight: "900", color: "#177A50" },
+	familyTitle: { fontSize: 16, fontWeight: "800", color: "#234233" },
+	familySub: { fontSize: 12, color: "#688073", marginTop: 3 },
+	logout: { height: 53, alignItems: "center", justifyContent: "center" },
+	logoutText: { color: "#BE494D", fontWeight: "800", fontSize: 15 },
+});
