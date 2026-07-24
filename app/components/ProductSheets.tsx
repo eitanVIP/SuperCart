@@ -1,63 +1,14 @@
-import React, { useEffect, useRef, useState } from "react";
-import {
-	Alert,
-	Animated,
-	Image,
-	Modal,
-	PanResponder,
-	Pressable,
-	StyleSheet,
-	Switch,
-	Text,
-	TextInput,
-	View,
-} from "react-native";
+import React, { useEffect, useState } from "react";
+import { Alert, Image, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import { BottomSheet } from "@expo/ui";
 import { PrimaryButton } from "./ui";
 
 function Sheet({ visible, onClose, children }) {
-	const offset = useRef(new Animated.Value(0)).current;
-	useEffect(() => {
-		if (visible)
-			Animated.spring(offset, {
-				toValue: 0,
-				useNativeDriver: true,
-				damping: 24,
-				stiffness: 280,
-			}).start();
-	}, [visible, offset]);
-	const pan = useRef(
-		PanResponder.create({
-			onMoveShouldSetPanResponder: (_, gesture) =>
-				Math.abs(gesture.dy) > 5 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
-			onPanResponderMove: (_, gesture) => offset.setValue(Math.max(0, gesture.dy)),
-			onPanResponderRelease: (_, gesture) => {
-				if (gesture.dy > 105 || gesture.vy > 1)
-					Animated.timing(offset, {
-						toValue: 600,
-						duration: 170,
-						useNativeDriver: true,
-					}).start(onClose);
-				else
-					Animated.spring(offset, {
-						toValue: 0,
-						useNativeDriver: true,
-						damping: 21,
-						stiffness: 260,
-					}).start();
-			},
-		}),
-	).current;
 	return (
-		<Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
-			<Pressable onPress={onClose} style={styles.backdrop} />
-			<Animated.View style={[styles.sheet, { transform: [{ translateY: offset }] }]}>
-				<View {...pan.panHandlers} style={styles.dragArea}>
-					<View style={styles.handle} />
-				</View>
-				{children}
-			</Animated.View>
-		</Modal>
+		<BottomSheet isPresented={visible} onDismiss={onClose}>
+			<View style={styles.sheet}>{children}</View>
+		</BottomSheet>
 	);
 }
 
@@ -262,20 +213,11 @@ export function DetailsSheet({ item, visible, onClose, onEdit, onDelete }) {
 }
 
 const styles = StyleSheet.create({
-	backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,.16)" },
 	sheet: {
-		position: "absolute",
-		bottom: 0,
-		left: 0,
-		right: 0,
 		backgroundColor: "#FFF",
-		borderTopLeftRadius: 26,
-		borderTopRightRadius: 26,
 		paddingHorizontal: 22,
 		paddingBottom: 34,
 	},
-	dragArea: { height: 34, justifyContent: "center", alignItems: "center" },
-	handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: "#C8D1CB" },
 	title: { fontSize: 24, fontWeight: "800", color: "#183226" },
 	sub: { fontSize: 14, color: "#728178", marginTop: 5 },
 	label: {

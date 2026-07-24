@@ -1,27 +1,15 @@
-import React, { useState } from "react";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { AuthScreen } from "./screens/AuthScreen";
-import { FamilyGateScreen } from "./screens/FamilyGateScreen";
-import { MainApp } from "./screens/MainApp";
+import {StyleSheet, Text} from "react-native";
+import {Link, Slot} from "expo-router";
 
-export default function SuperCart() {
-	const [session, setSession] = useState(null);
-	const [family, setFamily] = useState(null);
-
-	const screen = !session ? (
-		<AuthScreen onAuthenticated={setSession} />
-	) : !family ? (
-		<FamilyGateScreen onFamilySelected={setFamily} onLogout={() => setSession(null)} />
-	) : (
-		<MainApp
-			session={session}
-			family={family}
-			onLogout={() => {
-				setSession(null);
-				setFamily(null);
-			}}
-			onLeaveFamily={() => setFamily(null)}
-		/>
+export default function LandingPage() {
+	return (
+		<>
+			<Text>Hi</Text>
+			<Link href="./(auth)/index.tsx">Log In</Link>
+		</>
 	);
-	return <SafeAreaProvider>{screen}</SafeAreaProvider>;
 }
+
+const styles = StyleSheet.create({
+
+});

@@ -2,7 +2,7 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 const tabs = [
 	{ icon: "HOME", label: "Home" },
-	{ icon: "LIST", label: "Checklist" },
+	{ icon: "LIST", label: "ChecklistScreen" },
 	{ icon: "SET", label: "Settings" },
 ];
 export function BottomNav({
