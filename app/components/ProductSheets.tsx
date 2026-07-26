@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Alert, Image, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { BottomSheet } from "@expo/ui";
+import BottomSheet, { BottomSheetView } from '@expo/ui/community/bottom-sheet';
 import { PrimaryButton } from "./ui";
 
 function Sheet({ visible, onClose, children }) {
