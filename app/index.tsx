@@ -5,7 +5,7 @@ export default function LandingPage() {
 	return (
 		<>
 			<Text>Hi</Text>
-			<Link href="./(auth)/index.tsx">Log In</Link>
+			<Link href="/(auth)">Log In</Link>
 		</>
 	);
 }
