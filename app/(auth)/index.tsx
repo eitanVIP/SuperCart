@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { Field, PrimaryButton } from "../components/ui";
 import {useAuth} from "../../context/AuthContext";
 import {router} from "expo-router";
+import * as Auth from '../nonui/auth';
 
 export default function AuthScreen() {
     const [mode, setMode] = useState("login");
@@ -16,28 +17,37 @@ export default function AuthScreen() {
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
 
-    function nextPage() {
-        router.push("/(auth)/family-gate");
-    }
-
     // TODO: add firebase
     function signIn(email: string, password: string) {
         if (!email || email === "" || !password || password === "") {
             Alert.alert(
                 'Invalid input',
-                'The email or password are empty.',
+                'All inputs are required',
                 [{ text: 'OK', onPress: () => {} }]
             );
             return;
         }
 
-        setSession({id: "0", email: "email@email.email", name: "Eitan"});
-        nextPage();
+        Auth.signIn(email, password, () => {
+            setSession({id: "0", email: email, name: "Eitan"});
+            router.push("/(auth)/family-gate");
+        });
     }
 
     function signUp(email: string, password: string, name: string) {
-        setSession({id: "0", email: "email@email.email", name: "Eitan"});
-        nextPage();
+        if (!email || email === "" || !password || password === "" || !name || name === "") {
+            Alert.alert(
+                'Invalid input',
+                'All inputs are required',
+                [{ text: 'OK', onPress: () => {} }]
+            );
+            return;
+        }
+
+        Auth.signUp(email, password, name, () => {
+            setSession({id: "0", email: email, name: name});
+            router.push("/(auth)/family-gate");
+        });
     }
 
     return (

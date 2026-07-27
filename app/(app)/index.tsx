@@ -18,21 +18,31 @@ import { FamilyManagementSheet } from "../components/FamilyManagementSheet";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { useProducts } from "../hooks/useProducts";
 import ListHeader from "../components/ListHeader";
-import {Slot} from "expo-router";
+import {router, Slot} from "expo-router";
 import GroceriesScreen from "../screens/GroceriesScreen";
 import ChecklistScreen from "../screens/ChecklistScreen";
+import {useAuth} from "../../context/AuthContext";
+import * as Auth from "../nonui/auth";
 
 const { width } = Dimensions.get("window");
 const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
 
-export function MainAppLayout({ session, family, onLogout, onLeaveFamily }) {
+export default function MainApp() {
     const [page, setPage] = useState(0);
     const [sheet, setSheet] = useState(null);
     const [selected, setSelected] = useState(null);
+
+    const { session, family, setSession, setFamily } = useAuth();
+
     const { products, addProduct, toggleProduct, deleteProduct, editProduct } = useProducts(
         family.id,
         session,
     );
+
+    function signOut() {
+        Auth.signOut();
+        router.push("/(auth)");
+    }
 
     const translateX = useRef(new Animated.Value(0)).current;
     const pageRef = useRef(0);
@@ -77,29 +87,35 @@ export function MainAppLayout({ session, family, onLogout, onLeaveFamily }) {
         <SafeAreaView edges={["top", "left", "right"]} style={styles.root}>
             <StatusBar style="dark" />
             <TopBar
-                title={page === 0 ? "SuperCart" : page === 1 ? "Shopping mode" : "SuperCart"}
+                title={"SuperCart"}
                 action={page === 2 ? "Log out" : null}
-                onAction={onLogout}
+                onAction={signOut}
             />
 
             <View style={styles.pagerViewport} {...pan.panHandlers}>
                 <Animated.View style={[styles.pages, { transform: [{ translateX }] }]}>
-                    <GroceriesScreen
-                        products={products}
-                        setSheet={setSheet}
-                        openDetails={openDetails}
-                        toggleProduct={toggleProduct}
-                    />
-                    <ChecklistScreen
-                        products={products}
-                        openDetails={openDetails}
-                        toggleProduct={toggleProduct}
-                    />
-                    <SettingsScreen
-                        family={family}
-                        onManageFamily={() => setSheet("family")}
-                        onLogout={onLogout}
-                    />
+                    <Page>
+                        <GroceriesScreen
+                            products={products}
+                            setSheet={setSheet}
+                            openDetails={openDetails}
+                            toggleProduct={toggleProduct}
+                        />
+                    </Page>
+                    <Page>
+                        <ChecklistScreen
+                            products={products}
+                            openDetails={openDetails}
+                            toggleProduct={toggleProduct}
+                        />
+                    </Page>
+                    <Page>
+                        <SettingsScreen
+                            family={family}
+                            onManageFamily={() => setSheet("family")}
+                            onLogout={signOut}
+                        />
+                    </Page>
                 </Animated.View>
             </View>
 
@@ -135,7 +151,7 @@ export function MainAppLayout({ session, family, onLogout, onLeaveFamily }) {
                 onClose={() => setSheet(null)}
                 onLeave={() => {
                     setSheet(null);
-                    onLeaveFamily();
+                    () => {}
                 }}
             />
         </SafeAreaView>

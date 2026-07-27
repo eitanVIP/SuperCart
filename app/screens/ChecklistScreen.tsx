@@ -1,10 +1,11 @@
 import React, { useRef, useState } from "react";
 import {ProductList} from "../components/ProductList";
 import ListHeader from "../components/ListHeader";
+import { View } from "react-native";
 
 export default function ChecklistScreen({products, openDetails, toggleProduct}) {
     return (
-        <>
+        <View style={{ flexDirection: "column" }}>
             <ListHeader
                 eyebrow="AT THE STORE"
                 title="ChecklistScreen"
@@ -17,6 +18,6 @@ export default function ChecklistScreen({products, openDetails, toggleProduct}) 
                 onSelect={openDetails}
                 onToggle={toggleProduct}
             />
-        </>
+        </View>
     );
 }

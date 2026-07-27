@@ -1,16 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useRef, useState} from "react";
 import { Alert, Image, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import BottomSheet, { BottomSheetView } from '@expo/ui/community/bottom-sheet';
 import { PrimaryButton } from "./ui";
-
-function Sheet({ visible, onClose, children }) {
-	return (
-		<BottomSheet isPresented={visible} onDismiss={onClose}>
-			<View style={styles.sheet}>{children}</View>
-		</BottomSheet>
-	);
-}
 
 function PhotoControl({ uri, onChange }) {
 	const takePhoto = async () => {
@@ -63,6 +55,9 @@ export function AddProductSheet({ visible, onClose, onAdd }) {
 	const [description, setDescription] = useState("");
 	const [isRecurring, setRecurring] = useState(false);
 	const [imageUrl, setImageUrl] = useState(null);
+
+	const sheetRef = useRef<BottomSheet>(null);
+
 	const add = async () => {
 		if (!name.trim()) return Alert.alert("Item name required");
 		await onAdd({ name: name.trim(), description: description.trim(), isRecurring, imageUrl });
@@ -72,32 +67,45 @@ export function AddProductSheet({ visible, onClose, onAdd }) {
 		setImageUrl(null);
 		onClose();
 	};
+
 	return (
-		<Sheet visible={visible} onClose={onClose}>
-			<Text style={styles.title}>Add an item</Text>
-			<Text style={styles.sub}>It will be shared with your family.</Text>
-			<PhotoControl uri={imageUrl} onChange={setImageUrl} />
-			<Text style={styles.label}>ITEM NAME</Text>
-			<TextInput
-				value={name}
-				onChangeText={setName}
-				placeholder="What do you need?"
-				placeholderTextColor="#88958D"
-				style={styles.input}
-			/>
-			<Text style={styles.label}>
-				DESCRIPTION <Text style={styles.optional}>OPTIONAL</Text>
-			</Text>
-			<TextInput
-				value={description}
-				onChangeText={setDescription}
-				placeholder="Quantity, type, or notes"
-				placeholderTextColor="#88958D"
-				style={styles.input}
-			/>
-			<RecurringSwitch value={isRecurring} onChange={setRecurring} />
-			<PrimaryButton label="Add to list" onPress={add} />
-		</Sheet>
+		<BottomSheet
+			ref={sheetRef}
+			index={visible ? 0 : -1}
+			onChange={index => {
+				console.log('onChange', index);
+			}}
+			onClose={() => {
+				console.log('closed');
+				onClose();
+			}}
+			enablePanDownToClose>
+			<BottomSheetView style={styles.sheet}>
+				<Text style={styles.title}>Add an item</Text>
+				<Text style={styles.sub}>It will be shared with your family.</Text>
+				<PhotoControl uri={imageUrl} onChange={setImageUrl} />
+				<Text style={styles.label}>ITEM NAME</Text>
+				<TextInput
+					value={name}
+					onChangeText={setName}
+					placeholder="What do you need?"
+					placeholderTextColor="#88958D"
+					style={styles.input}
+				/>
+				<Text style={styles.label}>
+					DESCRIPTION <Text style={styles.optional}>OPTIONAL</Text>
+				</Text>
+				<TextInput
+					value={description}
+					onChangeText={setDescription}
+					placeholder="Quantity, type, or notes"
+					placeholderTextColor="#88958D"
+					style={styles.input}
+				/>
+				<RecurringSwitch value={isRecurring} onChange={setRecurring} />
+				<PrimaryButton label="Add to list" onPress={add} />
+			</BottomSheetView>
+		</BottomSheet>
 	);
 }
 
@@ -106,6 +114,9 @@ export function EditProductSheet({ item, visible, onClose, onSave }) {
 	const [description, setDescription] = useState("");
 	const [isRecurring, setRecurring] = useState(false);
 	const [imageUrl, setImageUrl] = useState(null);
+
+	const sheetRef = useRef<BottomSheet>(null);
+
 	useEffect(() => {
 		if (visible && item) {
 			setName(item.name);
@@ -114,7 +125,9 @@ export function EditProductSheet({ item, visible, onClose, onSave }) {
 			setImageUrl(item.imageUrl || null);
 		}
 	}, [visible, item]);
+
 	if (!item) return null;
+
 	const save = async () => {
 		if (!name.trim()) return Alert.alert("Item name required");
 		await onSave(item.id, {
@@ -125,31 +138,39 @@ export function EditProductSheet({ item, visible, onClose, onSave }) {
 		});
 		onClose();
 	};
+
 	return (
-		<Sheet visible={visible} onClose={onClose}>
-			<Text style={styles.title}>Edit item</Text>
-			<PhotoControl uri={imageUrl} onChange={setImageUrl} />
-			<Text style={styles.label}>ITEM NAME</Text>
-			<TextInput
-				value={name}
-				onChangeText={setName}
-				placeholder="Item name"
-				placeholderTextColor="#88958D"
-				style={styles.input}
-			/>
-			<Text style={styles.label}>
-				DESCRIPTION <Text style={styles.optional}>OPTIONAL</Text>
-			</Text>
-			<TextInput
-				value={description}
-				onChangeText={setDescription}
-				placeholder="Quantity, type, or notes"
-				placeholderTextColor="#88958D"
-				style={styles.input}
-			/>
-			<RecurringSwitch value={isRecurring} onChange={setRecurring} />
-			<PrimaryButton label="Save changes" onPress={save} />
-		</Sheet>
+		<BottomSheet
+			ref={sheetRef}
+			index={visible ? 0 : -1}
+			onChange={index => {}}
+			onClose={() => onClose()}
+			enablePanDownToClose>
+			<BottomSheetView style={styles.sheet}>
+				<Text style={styles.title}>Edit item</Text>
+				<PhotoControl uri={imageUrl} onChange={setImageUrl} />
+				<Text style={styles.label}>ITEM NAME</Text>
+				<TextInput
+					value={name}
+					onChangeText={setName}
+					placeholder="Item name"
+					placeholderTextColor="#88958D"
+					style={styles.input}
+				/>
+				<Text style={styles.label}>
+					DESCRIPTION <Text style={styles.optional}>OPTIONAL</Text>
+				</Text>
+				<TextInput
+					value={description}
+					onChangeText={setDescription}
+					placeholder="Quantity, type, or notes"
+					placeholderTextColor="#88958D"
+					style={styles.input}
+				/>
+				<RecurringSwitch value={isRecurring} onChange={setRecurring} />
+				<PrimaryButton label="Save changes" onPress={save} />
+			</BottomSheetView>
+		</BottomSheet>
 	);
 }
 
@@ -172,49 +193,59 @@ function RecurringSwitch({ value, onChange }) {
 
 export function DetailsSheet({ item, visible, onClose, onEdit, onDelete }) {
 	if (!item) return null;
+
+	const sheetRef = useRef<BottomSheet>(null);
+
 	return (
-		<Sheet visible={visible} onClose={onClose}>
-			{item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.detailImage} />}
-			<Text style={styles.title}>{item.name}</Text>
-			{item.description ? (
-				<Text style={styles.detailText}>{item.description}</Text>
-			) : (
-				<Text style={styles.detailMuted}>No description added.</Text>
-			)}
-			<View style={styles.metadata}>
-				<Text style={styles.metadataLabel}>ADDED BY</Text>
-				<Text style={styles.metadataValue}>{item.addedByName}</Text>
-			</View>
-			<View style={styles.actions}>
-				<Pressable style={styles.edit} onPress={onEdit}>
-					<Text style={styles.editText}>Edit item</Text>
-				</Pressable>
-				<Pressable
-					style={styles.remove}
-					onPress={() =>
-						Alert.alert("Delete item?", `Remove ${item.name} from the family list?`, [
-							{ text: "Cancel", style: "cancel" },
-							{
-								text: "Delete",
-								style: "destructive",
-								onPress: () => {
-									onDelete(item.id);
-									onClose();
+		<BottomSheet
+			ref={sheetRef}
+			index={visible ? 0 : -1}
+			onChange={index => {}}
+			onClose={() => onClose()}
+			enablePanDownToClose>
+			<BottomSheetView style={styles.sheet}>
+				{item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.detailImage} />}
+				<Text style={styles.title}>{item.name}</Text>
+				{item.description ? (
+					<Text style={styles.detailText}>{item.description}</Text>
+				) : (
+					<Text style={styles.detailMuted}>No description added.</Text>
+				)}
+				<View style={styles.metadata}>
+					<Text style={styles.metadataLabel}>ADDED BY</Text>
+					<Text style={styles.metadataValue}>{item.addedByName}</Text>
+				</View>
+				<View style={styles.actions}>
+					<Pressable style={styles.edit} onPress={onEdit}>
+						<Text style={styles.editText}>Edit item</Text>
+					</Pressable>
+					<Pressable
+						style={styles.remove}
+						onPress={() =>
+							Alert.alert("Delete item?", `Remove ${item.name} from the family list?`, [
+								{ text: "Cancel", style: "cancel" },
+								{
+									text: "Delete",
+									style: "destructive",
+									onPress: () => {
+										onDelete(item.id);
+										onClose();
+									},
 								},
-							},
-						])
-					}
-				>
-					<Text style={styles.removeText}>Delete</Text>
-				</Pressable>
-			</View>
-		</Sheet>
+							])
+						}
+					>
+						<Text style={styles.removeText}>Delete</Text>
+					</Pressable>
+				</View>
+			</BottomSheetView>
+		</BottomSheet>
 	);
 }
 
 const styles = StyleSheet.create({
 	sheet: {
-		backgroundColor: "#FFF",
+		backgroundColor: "#F0F0F4",
 		paddingHorizontal: 22,
 		paddingBottom: 34,
 	},

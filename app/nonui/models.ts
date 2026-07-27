@@ -6,7 +6,7 @@ export function createProduct({
 	...values
 }: ProductValues & { familyId: string; user: User }): Product {
 	return {
-		id: `local-${Date.now()}`,
+		id: "0",
 		familyId,
 		name: values.name,
 		description: values.description || "",
@@ -19,13 +19,13 @@ export function createProduct({
 	};
 }
 
-export function createFamily(name: string): Family {
+export function createFamily(name: string, userId: string): Family {
 	return {
-		id: `local-family-${Date.now()}`,
+		id: "0",
 		name,
 		code: String(Math.floor(100000 + Math.random() * 900000)),
 		weekStartDay: "Sunday",
 		shoppingDays: [],
-		memberIds: [],
+		memberIds: [userId],
 	};
 }

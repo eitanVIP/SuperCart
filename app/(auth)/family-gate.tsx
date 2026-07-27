@@ -3,24 +3,54 @@ import { Alert, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { PrimaryButton, TopBar } from "../components/ui";
-import { createFamily } from "../data/models";
+import { createFamily } from "../nonui/models";
+import {useAuth} from "../../context/AuthContext";
+import * as Auth from '../nonui/auth';
+import {router} from "expo-router";
 
 export default function FamilyGate() {
     const [name, setName] = useState("");
     const [code, setCode] = useState("");
 
-    const makeFamily = () =>
-        name.trim()
-            ? onFamilySelected(createFamily(name.trim()))
-            : Alert.alert("Family name required");
-    const joinFamily = () =>
-        code.length === 6
-            ? onFamilySelected({ ...createFamily("My Family"), code })
-            : Alert.alert("Enter the six-digit family code");
+    const { session, family, setSession, setFamily } = useAuth();
+
+    function makeFamily(){
+        if (!name.trim()) {
+            Alert.alert(
+                'Fill all required fields',
+                'Family name is required',
+                [{ text: 'OK', onPress: () => {} }]
+            );
+            return;
+        }
+
+        setFamily(createFamily(name.trim(), session.id));
+        router.push("/(app)");
+    }
+
+    function joinFamily() {
+        if (code.length !== 6) {
+            Alert.alert(
+                'Enter a valid six-digit family code',
+                "The code entered isn't six digits",
+                [{ text: 'OK', onPress: () => {} }]
+            );
+            return;
+        }
+
+        // TODO: load from database
+        setFamily(null);
+        router.push("/(app)");
+    }
+
+    function signOut() {
+        Auth.signOut();
+        router.push("/(auth)");
+    }
 
     return (
         <>
-            <TopBar title="SuperCart" action="Log out" onAction={onLogout} />
+            <TopBar title="SuperCart" action="Log out" onAction={signOut} />
             <View style={styles.content}>
                 <Text style={styles.title}>Choose your family</Text>
                 <Text style={styles.intro}>

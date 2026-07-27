@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { createProduct } from "../data/models";
-import { superCartService } from "../data/superCartService";
-import type { Product, ProductValues, User } from "../data/types";
+import { createProduct } from "../nonui/models";
+import { superCartService } from "../nonui/superCartService";
+import type { Product, ProductValues, User } from "../nonui/types";
 
 export function useProducts(familyId: string, user: User) {
 	const [products, setProducts] = useState<Product[]>([]);

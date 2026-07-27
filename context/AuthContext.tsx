@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import {Family, User} from "../app/data/types";
+import {Family, User} from "../app/nonui/types";
 
 interface AuthContextType {
     session: User | null;
