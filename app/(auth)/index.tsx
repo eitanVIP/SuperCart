@@ -6,18 +6,18 @@ import { Field, PrimaryButton } from "../components/ui";
 import {useAuth} from "../../context/AuthContext";
 import {router} from "expo-router";
 import * as Auth from '../nonui/auth';
+import {useSnackbar} from "../../context/SnackbarContext";
 
 export default function AuthScreen() {
     const [mode, setMode] = useState("login");
     const signup = mode === "signup";
 
-    const { session, family, setSession, setFamily } = useAuth();
+    const { showSnackbar } = useSnackbar();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
 
-    // TODO: add firebase
     function signIn(email: string, password: string) {
         if (!email || email === "" || !password || password === "") {
             Alert.alert(
@@ -28,9 +28,11 @@ export default function AuthScreen() {
             return;
         }
 
-        Auth.signIn(email, password, () => {
-            setSession({id: "0", email: email, name: "Eitan"});
+        Auth.signIn(email, password).then(userCred => {
             router.push("/(auth)/family-gate");
+        }).catch(err => {
+            console.log("Failed to sign in", err);
+            showSnackbar("Failed to sign in: " + err)
         });
     }
 
@@ -44,9 +46,16 @@ export default function AuthScreen() {
             return;
         }
 
-        Auth.signUp(email, password, name, () => {
-            setSession({id: "0", email: email, name: name});
-            router.push("/(auth)/family-gate");
+        Auth.signUp(email, password).then(userCred => {
+            Auth.updateProfile(name).then(() => {
+                router.push("/(auth)/family-gate");
+            }).catch(err => {
+                console.log("Failed to sign up", err);
+                showSnackbar("Failed to sign up: " + err)
+            });
+        }).catch(err => {
+            console.log("Failed to sign up", err);
+            showSnackbar("Failed to sign up: " + err)
         });
     }
 
