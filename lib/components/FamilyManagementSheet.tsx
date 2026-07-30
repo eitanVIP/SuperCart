@@ -1,14 +1,5 @@
-import React, { useEffect, useRef } from "react";
-import {
-	Alert,
-	Animated,
-	Modal,
-	PanResponder,
-	Pressable,
-	StyleSheet,
-	Text,
-	View,
-} from "react-native";
+import React, {useEffect, useRef} from "react";
+import {Alert, Animated, Modal, PanResponder, Pressable, StyleSheet, Text, View,} from "react-native";
 
 export function FamilyManagementSheet({ visible, family, onClose, onLeave }) {
 	const offset = useRef(new Animated.Value(0)).current;

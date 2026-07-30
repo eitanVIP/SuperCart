@@ -1,8 +1,7 @@
-import {StyleSheet, View, Text, ScrollView, KeyboardAvoidingView, Platform} from "react-native";
-import { Slot } from "expo-router";
+import {KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View} from "react-native";
+import {Slot} from "expo-router";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {StatusBar} from "expo-status-bar";
-import {height} from "@expo/ui/jetpack-compose/modifiers";
 
 export default function AuthLayout() {
     return (

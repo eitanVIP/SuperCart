@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from "react-native";
+import {Pressable, StyleSheet, Text, TextInput, type TextInputProps, View} from "react-native";
 
 export function PrimaryButton({
 	label,

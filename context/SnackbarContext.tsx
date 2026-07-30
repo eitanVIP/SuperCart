@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Snackbar, PaperProvider } from 'react-native-paper';
+import React, {createContext, ReactNode, useContext, useState} from 'react';
+import {PaperProvider, Snackbar} from 'react-native-paper';
 
 interface SnackbarContextType {
     showSnackbar: (message: string) => void;
@@ -23,13 +23,10 @@ export const SnackbarProvider = ({ children }: { children: ReactNode }) => {
             <PaperProvider>
                 {children}
                 <Snackbar
+                    style={{ margin: 30, backgroundColor: '#F5F5F5' }}
                     visible={visible}
                     onDismiss={onDismiss}
-                    duration={2000}
-                    action={{
-                        label: 'OK',
-                        onPress: onDismiss,
-                    }}
+                    duration={3000}
                 >
                     {text}
                 </Snackbar>

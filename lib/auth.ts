@@ -1,5 +1,10 @@
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as firebaseSignOut, updateProfile as firebaseUpdateProfile } from 'firebase/auth';
-import { auth } from './firebaseConfig';
+import {
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut as firebaseSignOut,
+    updateProfile as firebaseUpdateProfile
+} from 'firebase/auth';
+import {auth} from './firebaseConfig';
 
 export function signIn(email: string, password: string) {
     return signInWithEmailAndPassword(auth, email, password);

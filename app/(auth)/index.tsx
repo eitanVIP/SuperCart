@@ -1,14 +1,13 @@
-import React, { useState } from "react";
-import {Alert, StyleSheet, Text, TouchableOpacity, View} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
-import { Field, PrimaryButton } from "../components/ui";
-import {useAuth} from "../../context/AuthContext";
+import React, {useEffect, useState} from "react";
+import {StyleSheet, Text, TouchableOpacity, View} from "react-native";
+import {Field, PrimaryButton} from "@/lib/components/ui";
 import {router} from "expo-router";
-import * as Auth from '../nonui/auth';
+import * as Auth from '@/lib/auth';
 import {useSnackbar} from "../../context/SnackbarContext";
+import {log} from "@/lib/util";
 
 export default function AuthScreen() {
+    const [loading, setLoading] = useState(false);
     const [mode, setMode] = useState("login");
     const signup = mode === "signup";
 
@@ -18,44 +17,86 @@ export default function AuthScreen() {
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
 
+    useEffect(() => {
+        if (Auth.getCurrentUser()) {
+            router.push('/(auth)/family-gate');
+        }
+    }, []);
+    if (Auth.getCurrentUser())
+        return null;
+
+    function getAuthErrorMessage(err: any): string {
+        switch (err.code) {
+            // Sign-in
+            case 'auth/invalid-credential':
+            case 'auth/wrong-password':
+            case 'auth/user-not-found':
+                return 'Incorrect email or password.';
+            case 'auth/too-many-requests':
+                return 'Too many attempts. Try again later.';
+            case 'auth/user-disabled':
+                return 'This account has been disabled.';
+
+            // Sign-up
+            case 'auth/email-already-in-use':
+                return 'An account with this email already exists.';
+            case 'auth/weak-password':
+                return 'Password should be at least 6 characters.';
+            case 'auth/invalid-email':
+                return 'That email address looks invalid.';
+            case 'auth/operation-not-allowed':
+                return 'This sign-in method is currently disabled.';
+
+            // Update profile / re-authentication
+            case 'auth/requires-recent-login':
+                return 'Please sign in again to complete this action.';
+            case 'auth/credential-already-in-use':
+                return 'This credential is already linked to another account.';
+
+            // Network / general
+            case 'auth/network-request-failed':
+                return 'Network error. Check your connection and try again.';
+
+            default:
+                return 'Something went wrong. Please try again.';
+        }
+    }
+
     function signIn(email: string, password: string) {
         if (!email || email === "" || !password || password === "") {
-            Alert.alert(
-                'Invalid input',
-                'All inputs are required',
-                [{ text: 'OK', onPress: () => {} }]
-            );
+            log("Sign In", "All inputs are required", showSnackbar);
             return;
         }
+
+        setLoading(true);
 
         Auth.signIn(email, password).then(userCred => {
             router.push("/(auth)/family-gate");
         }).catch(err => {
-            console.log("Failed to sign in", err);
-            showSnackbar("Failed to sign in: " + err)
+            log("Sign In", getAuthErrorMessage(err), showSnackbar);
+        }).finally(() => {
+            setLoading(false);
         });
     }
 
     function signUp(email: string, password: string, name: string) {
         if (!email || email === "" || !password || password === "" || !name || name === "") {
-            Alert.alert(
-                'Invalid input',
-                'All inputs are required',
-                [{ text: 'OK', onPress: () => {} }]
-            );
+            log("Sign Up", "All inputs are required", showSnackbar);
             return;
         }
+
+        setLoading(true);
 
         Auth.signUp(email, password).then(userCred => {
             Auth.updateProfile(name).then(() => {
                 router.push("/(auth)/family-gate");
             }).catch(err => {
-                console.log("Failed to sign up", err);
-                showSnackbar("Failed to sign up: " + err)
+                log("Sign Up", getAuthErrorMessage(err), showSnackbar);
             });
         }).catch(err => {
-            console.log("Failed to sign up", err);
-            showSnackbar("Failed to sign up: " + err)
+            log("Sign Up", getAuthErrorMessage(err), showSnackbar);
+        }).finally(() => {
+            setLoading(false);
         });
     }
 
@@ -102,6 +143,7 @@ export default function AuthScreen() {
                 secureTextEntry
             />
             <PrimaryButton
+                disabled={loading}
                 label={signup ? "Create account" : "Log in"}
                 onPress={() => {
                     if (signup)

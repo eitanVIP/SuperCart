@@ -1,5 +1,6 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import {Pressable, StyleSheet, Text, View} from "react-native";
+
 const tabs = [
 	{ icon: "HOME", label: "Home" },
 	{ icon: "LIST", label: "ChecklistScreen" },

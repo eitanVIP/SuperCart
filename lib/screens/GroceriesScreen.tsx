@@ -1,7 +1,7 @@
-import React, { useRef, useState } from "react";
+import React from "react";
 import {ProductList} from "../components/ProductList";
 import ListHeader from "../components/ListHeader";
-import { View } from "react-native";
+import {View} from "react-native";
 
 export default function GroceriesScreen({products, setSheet, openDetails, toggleProduct}) {
     return (

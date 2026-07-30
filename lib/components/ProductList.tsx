@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, {useMemo, useState} from "react";
+import {Pressable, ScrollView, StyleSheet, Text, View} from "react-native";
 
 const members = ["All", "You"];
 

@@ -1,46 +1,81 @@
-import React, { useState } from "react";
-import { Alert, StyleSheet, Text, TextInput, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
-import { PrimaryButton, TopBar } from "../components/ui";
-import { createFamily } from "../nonui/models";
-import {useAuth} from "../../context/AuthContext";
-import * as Auth from '../nonui/auth';
+import React, {useState} from "react";
+import {StyleSheet, Text, TextInput, View} from "react-native";
+import {PrimaryButton, TopBar} from "@/lib/components/ui";
+import * as Auth from '@/lib/auth';
 import {router} from "expo-router";
+import {useSnackbar} from "@/context/SnackbarContext";
+import {log} from "@/lib/util";
+import * as Family from "@/lib/family";
 
 export default function FamilyGate() {
     const [name, setName] = useState("");
     const [code, setCode] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    const { session, family, setSession, setFamily } = useAuth();
+    const { showSnackbar } = useSnackbar();
+
+    Family.isUserInFamily().then(result => {
+        if (result) {
+            router.push("/(app)");
+        }
+    }).catch(err => {
+        log("Family Gate", err.message, showSnackbar);
+    });
 
     function makeFamily(){
-        if (!name.trim()) {
-            Alert.alert(
-                'Fill all required fields',
-                'Family name is required',
-                [{ text: 'OK', onPress: () => {} }]
-            );
+        if (!name) {
+            log("Family Gate", "Fill in family name", showSnackbar)
             return;
         }
 
-        setFamily(createFamily(name.trim(), session.id));
-        router.push("/(app)");
+        setLoading(true);
+
+        Family.isUserInFamily().then(result => {
+            if (result) {
+                log("Family Gate", "You are already in a family", showSnackbar);
+                setLoading(false);
+                return;
+            }
+
+            Family.createFamily(name).then(newFamily => {
+                router.push("/(app)");
+            }).catch(err => {
+                log("Family Gate", err.message, showSnackbar);
+            }).finally(() => {
+                setLoading(false);
+            });
+        }).catch(err => {
+            log("Family Gate", err.message, showSnackbar);
+            setLoading(false);
+        });
     }
 
     function joinFamily() {
         if (code.length !== 6) {
-            Alert.alert(
-                'Enter a valid six-digit family code',
-                "The code entered isn't six digits",
-                [{ text: 'OK', onPress: () => {} }]
-            );
+            log("Family Gate", "Enter a valid six-digit family code", showSnackbar);
             return;
         }
 
-        // TODO: load from database
-        setFamily(null);
-        router.push("/(app)");
+        setLoading(true);
+
+        Family.isUserInFamily().then(result => {
+            if (result) {
+                log("Family Gate", "You are already in a family", showSnackbar);
+                setLoading(false);
+                return;
+            }
+
+            Family.joinFamily(code).then(family => {
+                router.push("/(app)");
+            }).catch(err => {
+                log("Family Gate", err.message, showSnackbar);
+            }).finally(() => {
+                setLoading(false);
+            });
+        }).catch(err => {
+            log("Family Gate", err.message, showSnackbar);
+            setLoading(false);
+        });
     }
 
     function signOut() {
@@ -66,7 +101,7 @@ export default function FamilyGate() {
                         placeholderTextColor="#88958D"
                         style={styles.input}
                     />
-                    <PrimaryButton label="Create family" onPress={makeFamily} />
+                    <PrimaryButton disabled={loading} label="Create family" onPress={makeFamily} />
                 </View>
                 <Text style={styles.divider}>OR</Text>
                 <View style={styles.panel}>
@@ -83,7 +118,7 @@ export default function FamilyGate() {
                         maxLength={6}
                         style={[styles.input, styles.code]}
                     />
-                    <PrimaryButton label="Join family" onPress={joinFamily} />
+                    <PrimaryButton disabled={loading} label="Join family" onPress={joinFamily} />
                 </View>
             </View>
         </>

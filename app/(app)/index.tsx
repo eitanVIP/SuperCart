@@ -1,28 +1,20 @@
-import React, { useRef, useState } from "react";
-import {
-    Animated,
-    Dimensions,
-    PanResponder,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
-import { TopBar } from "../components/ui";
-import { BottomNav } from "../components/BottomNav";
-import { ProductList } from "../components/ProductList";
-import { AddProductSheet, DetailsSheet, EditProductSheet } from "../components/ProductSheets";
-import { FamilyManagementSheet } from "../components/FamilyManagementSheet";
-import { SettingsScreen } from "../screens/SettingsScreen";
-import { useProducts } from "../hooks/useProducts";
-import ListHeader from "../components/ListHeader";
-import {router, Slot} from "expo-router";
-import GroceriesScreen from "../screens/GroceriesScreen";
-import ChecklistScreen from "../screens/ChecklistScreen";
-import {useAuth} from "../../context/AuthContext";
-import * as Auth from "../nonui/auth";
+import React, {useRef, useState} from "react";
+import {Animated, Dimensions, PanResponder, Pressable, StyleSheet, Text, View,} from "react-native";
+import {SafeAreaView} from "react-native-safe-area-context";
+import {StatusBar} from "expo-status-bar";
+import {TopBar} from "@/lib/components/ui";
+import {BottomNav} from "@/lib/components/BottomNav";
+import {AddProductSheet, DetailsSheet, EditProductSheet} from "@/lib/components/ProductSheets";
+import {FamilyManagementSheet} from "@/lib/components/FamilyManagementSheet";
+import {SettingsScreen} from "@/lib/screens/SettingsScreen";
+import {router} from "expo-router";
+import GroceriesScreen from "@/lib/screens/GroceriesScreen";
+import ChecklistScreen from "@/lib/screens/ChecklistScreen";
+import * as Auth from "@/lib/auth";
+import {getCurrentUser} from "@/lib/auth";
+import {isUserInFamily, loadFamily} from "@/lib/family";
+import {log} from "@/lib/util";
+import {useSnackbar} from "@/context/SnackbarContext";
 
 const { width } = Dimensions.get("window");
 const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
@@ -31,13 +23,9 @@ export default function MainApp() {
     const [page, setPage] = useState(0);
     const [sheet, setSheet] = useState(null);
     const [selected, setSelected] = useState(null);
+    const [ family, setFamily ] = useState(null);
 
-    const { session, family, setSession, setFamily } = useAuth();
-
-    const { products, addProduct, toggleProduct, deleteProduct, editProduct } = useProducts(
-        family.id,
-        session,
-    );
+    const { showSnackbar } = useSnackbar();
 
     function signOut() {
         Auth.signOut();
@@ -83,6 +71,32 @@ export default function MainApp() {
         setSheet("details");
     };
 
+    if (!getCurrentUser()) {
+        router.push("/(auth)");
+        return (<></>);
+    }
+
+    if (!family) {
+        isUserInFamily().then(result => {
+            if (!result) {
+                router.push("/(auth)/family-gate");
+                return;
+            }
+
+            loadFamily().then(family => {
+                setFamily(family);
+            }).catch(err => {
+                log("Main App", "failed to load family: " + err.message, showSnackbar);
+                router.push("/(auth)/family-gate");
+            });
+        }).catch(err => {
+            log("Main App", "failed to check family: " + err.message, showSnackbar);
+            router.push("/(auth)/family-gate");
+        });
+
+        return (<></>);
+    }
+
     return (
         <SafeAreaView edges={["top", "left", "right"]} style={styles.root}>
             <StatusBar style="dark" />
@@ -96,17 +110,17 @@ export default function MainApp() {
                 <Animated.View style={[styles.pages, { transform: [{ translateX }] }]}>
                     <Page>
                         <GroceriesScreen
-                            products={products}
+                            products={[]}
                             setSheet={setSheet}
                             openDetails={openDetails}
-                            toggleProduct={toggleProduct}
+                            toggleProduct={() => {}}
                         />
                     </Page>
                     <Page>
                         <ChecklistScreen
-                            products={products}
+                            products={[]}
                             openDetails={openDetails}
-                            toggleProduct={toggleProduct}
+                            toggleProduct={() => {}}
                         />
                     </Page>
                     <Page>
@@ -130,20 +144,20 @@ export default function MainApp() {
             <AddProductSheet
                 visible={sheet === "add"}
                 onClose={() => setSheet(null)}
-                onAdd={addProduct}
+                onAdd={() => {}}
             />
             <DetailsSheet
                 item={selected}
                 visible={sheet === "details"}
                 onClose={() => setSheet(null)}
                 onEdit={() => setSheet("edit")}
-                onDelete={deleteProduct}
+                onDelete={() => {}}
             />
             <EditProductSheet
                 item={selected}
                 visible={sheet === "edit"}
                 onClose={() => setSheet(null)}
-                onSave={editProduct}
+                onSave={() => {}}
             />
             <FamilyManagementSheet
                 visible={sheet === "family"}

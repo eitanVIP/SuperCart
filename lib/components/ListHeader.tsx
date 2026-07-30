@@ -1,4 +1,4 @@
-import {StyleSheet, View, Text} from "react-native";
+import {StyleSheet, Text, View} from "react-native";
 
 export default function ListHeader({ eyebrow, title, text }) {
     return (
