@@ -1,5 +1,5 @@
 import React from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import {Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View} from "react-native";
 
 export function SettingsScreen({ family, onManageFamily, onLogout }) {
 	return (

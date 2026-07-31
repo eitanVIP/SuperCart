@@ -1,11 +1,11 @@
 import React, {useEffect, useState} from "react";
-import {Alert, Image, Pressable, StyleSheet, Switch, Text, TextInput, View} from "react-native";
+import {Alert, Image, Pressable, StyleSheet, Switch, Text, TextInput, useWindowDimensions, View} from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import {BottomSheet} from '@expo/ui';
+import {BottomSheet as ExpoBottomSheet, RNHostView} from '@expo/ui';
 import {PrimaryButton} from "./ui";
 
 function PhotoControl({ uri, onChange }) {
-	const takePhoto = async () => {
+	async function takePhoto() {
 		const permission = await ImagePicker.requestCameraPermissionsAsync();
 		if (!permission.granted)
 			return Alert.alert(
@@ -19,8 +19,9 @@ function PhotoControl({ uri, onChange }) {
 			quality: 0.75,
 		});
 		if (!result.canceled) onChange(result.assets[0].uri);
-	};
-	const choosePhoto = async () => {
+	}
+
+	async function choosePhoto() {
 		const result = await ImagePicker.launchImageLibraryAsync({
 			mediaTypes: ["images"],
 			allowsEditing: true,
@@ -28,7 +29,8 @@ function PhotoControl({ uri, onChange }) {
 			quality: 0.75,
 		});
 		if (!result.canceled) onChange(result.assets[0].uri);
-	};
+	}
+
 	return (
 		<View style={styles.photoRow}>
 			{uri ? (
@@ -50,24 +52,47 @@ function PhotoControl({ uri, onChange }) {
 	);
 }
 
-export function AddProductSheet({ visible, onClose, onAdd }) {
+export function BottomSheet({ children, visible, onClose }) {
+	const { width } = useWindowDimensions();
+
+	return (
+		<ExpoBottomSheet isPresented={visible} onDismiss={onClose} snapPoints={["0%"]}>
+			<RNHostView matchContents>
+				<View style={[styles.sheet, {width}]}>
+					{children}
+				</View>
+			</RNHostView>
+		</ExpoBottomSheet>
+	);
+}
+
+export function AddProductSheet({ visible, onCloseSheet, onAdd }) {
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 	const [isRecurring, setRecurring] = useState(false);
 	const [imageUrl, setImageUrl] = useState(null);
 
-	const add = async () => {
-		if (!name.trim()) return Alert.alert("Item name required");
-		await onAdd({ name: name.trim(), description: description.trim(), isRecurring, imageUrl });
+	function onClose() {
+		setImageUrl(null);
+		setRecurring(false);
 		setName("");
 		setDescription("");
-		setRecurring(false);
-		setImageUrl(null);
+		onCloseSheet();
+	}
+
+	function add() {
+		if (!name) {
+			Alert.alert("Item name required", "Please input a name.");
+			return
+		}
+
+		onAdd({ name: name, description: description, imageUrl: imageUrl, isRecurring: isRecurring });
+
 		onClose();
-	};
+	}
 
 	return (
-		<BottomSheet isPresented={visible} onDismiss={onClose}>
+		<BottomSheet visible={visible} onClose={onClose}>
 			<Text style={styles.title}>Add an item</Text>
 			<Text style={styles.sub}>It will be shared with your family.</Text>
 			<PhotoControl uri={imageUrl} onChange={setImageUrl} />
@@ -213,9 +238,11 @@ export function DetailsSheet({ item, visible, onClose, onEdit, onDelete }) {
 
 const styles = StyleSheet.create({
 	sheet: {
-		backgroundColor: "#F0F0F4",
-		paddingHorizontal: 22,
+		backgroundColor: "transparent",
+		paddingLeft: 24,
+		paddingRight: 24,
 		paddingBottom: 34,
+		gap: 8
 	},
 	title: { fontSize: 24, fontWeight: "800", color: "#183226" },
 	sub: { fontSize: 14, color: "#728178", marginTop: 5 },

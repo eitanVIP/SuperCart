@@ -1,5 +1,5 @@
 import React, {useRef, useState} from "react";
-import {Animated, Dimensions, PanResponder, Pressable, StyleSheet, Text, View,} from "react-native";
+import {ActivityIndicator, Animated, Dimensions, PanResponder, Pressable, StyleSheet, Text, View,} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {StatusBar} from "expo-status-bar";
 import {TopBar} from "@/lib/components/ui";
@@ -12,7 +12,7 @@ import GroceriesScreen from "@/lib/screens/GroceriesScreen";
 import ChecklistScreen from "@/lib/screens/ChecklistScreen";
 import * as Auth from "@/lib/auth";
 import {getCurrentUser} from "@/lib/auth";
-import {isUserInFamily, loadFamily} from "@/lib/family";
+import {addProductToDatabase, isUserInFamily, loadFamilyFromDatabase} from "@/lib/familyService";
 import {log} from "@/lib/util";
 import {useSnackbar} from "@/context/SnackbarContext";
 
@@ -83,7 +83,7 @@ export default function MainApp() {
                 return;
             }
 
-            loadFamily().then(family => {
+            loadFamilyFromDatabase().then(family => {
                 setFamily(family);
             }).catch(err => {
                 log("Main App", "failed to load family: " + err.message, showSnackbar);
@@ -94,7 +94,15 @@ export default function MainApp() {
             router.push("/(auth)/family-gate");
         });
 
-        return (<></>);
+        return (
+            <View style={{
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+            }}>
+                <ActivityIndicator size={50} color="#177A50" />
+            </View>
+        );
     }
 
     return (
@@ -143,8 +151,10 @@ export default function MainApp() {
 
             <AddProductSheet
                 visible={sheet === "add"}
-                onClose={() => setSheet(null)}
-                onAdd={() => {}}
+                onCloseSheet={() => setSheet(null)}
+                onAdd={(product: { name: string; description: string; imageUrl: string; isRecurring: boolean; }) => {
+                    addProductToDatabase(family, product.name, product.description, product.imageUrl, product.isRecurring);
+                }}
             />
             <DetailsSheet
                 item={selected}

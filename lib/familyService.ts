@@ -1,9 +1,9 @@
-import {collection, loadCollection, loadDocument, saveDocument} from "@/lib/database";
+import {addDocument, collection, loadCollection, loadDocument, saveDocument, uploadImage} from "@/lib/database";
 import {Family, Product} from "@/lib/types";
 import * as Auth from '@/lib/auth';
-import {deleteField} from 'firebase/firestore';
+import {arrayUnion, deleteField} from 'firebase/firestore';
 
-export function generateFamilyCode(length = 6): string {
+function generateFamilyCode(length = 6): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no O/0/I/1 to avoid confusion
     let code = '';
     for (let i = 0; i < length; i++) {
@@ -12,7 +12,7 @@ export function generateFamilyCode(length = 6): string {
     return code;
 }
 
-export async function createFamily(name: string, maxAttempts = 5): Promise<Family> {
+export async function createFamilyInDatabase(name: string, maxAttempts = 5): Promise<Family> {
     const userId = Auth.getCurrentUser()!.uid;
     const users = collection('users');
     const families = collection('families');
@@ -46,7 +46,7 @@ export async function createFamily(name: string, maxAttempts = 5): Promise<Famil
     throw new Error('Could not generate a unique family code. Please try again.');
 }
 
-export async function loadFamily(): Promise<Family> {
+export async function loadFamilyFromDatabase(): Promise<Family> {
     const userId = Auth.getCurrentUser()!.uid;
     const users = collection('users');
     const families = collection('families');
@@ -98,7 +98,7 @@ export async function loadFamily(): Promise<Family> {
     };
 }
 
-export async function joinFamily(code: string): Promise<Family> {
+export async function joinFamilyFromDatabase(code: string): Promise<Family> {
     const userId = Auth.getCurrentUser()!.uid;
     const users = collection('users');
 
@@ -108,7 +108,7 @@ export async function joinFamily(code: string): Promise<Family> {
     // 2. Try to load it — loadFamily reads the user's own familyCode,
     //    which we just set to `code`, so this checks that exact family.
     try {
-        return await loadFamily();
+        return await loadFamilyFromDatabase();
     } catch (err: any) {
         // Revert so the user isn't left pointing at a bad code
         await saveDocument(users, userId, { familyCode: deleteField() });
@@ -124,4 +124,58 @@ export async function isUserInFamily(): Promise<boolean> {
     const userData = await loadDocument(users, user.uid);
 
     return !!userData?.familyCode;
+}
+
+export async function addProductToDatabase(
+    family: Family,
+    name: string,
+    description: string,
+    imageUrl: string | null,
+    isRecurring: boolean
+): Promise<Product> {
+    const user = Auth.getCurrentUser()!;
+    const userId = user.uid;
+
+    // 1. Get user's name
+    const users = collection('users');
+    const userData = await loadDocument(users, userId);
+    const addedByName = userData?.name ?? user.displayName ?? 'Unknown';
+
+    // 2. Process and upload product photo to firebase storage
+    let firebaseImageUrl: string | null = null;
+    if (imageUrl)
+        firebaseImageUrl = await uploadImage(imageUrl, family.id);
+
+    // 3. Create product's document
+    const productsColl = collection(`families/${family.id}/allProducts`);
+
+    const newProductData = {
+        name: name,
+        description: description,
+        imageUrl: firebaseImageUrl,
+        addedByUserId: userId,
+        isRecurring: isRecurring,
+        isChecked: false,
+    };
+
+    const productId = await addDocument(productsColl, newProductData);
+
+    // 4. Update weekProducts
+    const families = collection('families');
+    await saveDocument(families, family.id, {
+        weekProducts: arrayUnion(productId),
+    });
+
+    // 5. Return product
+    return {
+        id: productId,
+        familyId: family.id,
+        name: name,
+        description: description,
+        imageUrl: firebaseImageUrl,
+        addedByUserId: userId,
+        addedByName: addedByName,
+        isRecurring: isRecurring,
+        isChecked: false
+    };
 }

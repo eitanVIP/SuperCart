@@ -19,7 +19,7 @@ export default function AuthScreen() {
 
     useEffect(() => {
         if (Auth.getCurrentUser()) {
-            router.push('/(auth)/family-gate');
+            router.push('/(app)');
         }
     }, []);
     if (Auth.getCurrentUser())

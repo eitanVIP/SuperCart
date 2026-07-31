@@ -5,7 +5,7 @@ import * as Auth from '@/lib/auth';
 import {router} from "expo-router";
 import {useSnackbar} from "@/context/SnackbarContext";
 import {log} from "@/lib/util";
-import * as Family from "@/lib/family";
+import * as Family from "@/lib/familyService";
 
 export default function FamilyGate() {
     const [name, setName] = useState("");
@@ -37,7 +37,7 @@ export default function FamilyGate() {
                 return;
             }
 
-            Family.createFamily(name).then(newFamily => {
+            Family.createFamilyInDatabase(name).then(newFamily => {
                 router.push("/(app)");
             }).catch(err => {
                 log("Family Gate", err.message, showSnackbar);
@@ -65,7 +65,7 @@ export default function FamilyGate() {
                 return;
             }
 
-            Family.joinFamily(code).then(family => {
+            Family.joinFamilyFromDatabase(code).then(family => {
                 router.push("/(app)");
             }).catch(err => {
                 log("Family Gate", err.message, showSnackbar);
@@ -111,10 +111,10 @@ export default function FamilyGate() {
                     </Text>
                     <TextInput
                         value={code}
-                        onChangeText={setCode}
+                        onChangeText={(text) => setCode(text.toUpperCase())}
                         placeholder="000000"
                         placeholderTextColor="#88958D"
-                        keyboardType="number-pad"
+                        autoCapitalize="characters"
                         maxLength={6}
                         style={[styles.input, styles.code]}
                     />
