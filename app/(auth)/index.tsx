@@ -5,8 +5,12 @@ import {router} from "expo-router";
 import * as Auth from '@/lib/auth';
 import {useSnackbar} from "../../context/SnackbarContext";
 import {log} from "@/lib/util";
+import {useTheme} from "@/theme/ThemeContext";
 
 export default function AuthScreen() {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
+
     const [loading, setLoading] = useState(false);
     const [mode, setMode] = useState("login");
     const signup = mode === "signup";
@@ -104,7 +108,7 @@ export default function AuthScreen() {
         <>
             <View style={styles.switcher}>
                 <TouchableOpacity
-                    style={[styles.tab, !signup && styles.activeTab]}
+                    style={[staticStyles.tab, !signup && styles.activeTab]}
                     onPress={() => setMode("login")}
                     activeOpacity={0.8}
                 >
@@ -113,7 +117,7 @@ export default function AuthScreen() {
                     </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                    style={[styles.tab, signup && styles.activeTab]}
+                    style={[staticStyles.tab, signup && styles.activeTab]}
                     onPress={() => setMode("signup")}
                     activeOpacity={0.8}
                 >
@@ -156,15 +160,7 @@ export default function AuthScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    switcher: {
-        height: 48,
-        backgroundColor: "#EAF1ED",
-        borderRadius: 13,
-        flexDirection: "row",
-        alignItems: "center",
-        padding: 4, // Gives a nice inner margin around the active tab
-    },
+const staticStyles = StyleSheet.create({
     tab: {
         flex: 1, // Forces each tab to take up exactly 50% of the container width
         height: "100%",
@@ -172,14 +168,26 @@ const styles = StyleSheet.create({
         alignItems: "center",
         borderRadius: 10,
     },
-    activeTab: {
-        backgroundColor: "#FFF",
-    },
-    tabText: {
-        color: "#6C7B72",
-        fontWeight: "800",
-    },
-    activeText: {
-        color: "#177A50",
-    },
 });
+
+const createStyles = (colors) =>
+    StyleSheet.create({
+        switcher: {
+            height: 48,
+            backgroundColor: colors.surfaceAlt,
+            borderRadius: 13,
+            flexDirection: "row",
+            alignItems: "center",
+            padding: 4, // Gives a nice inner margin around the active tab
+        },
+        activeTab: {
+            backgroundColor: colors.card,
+        },
+        tabText: {
+            color: colors.textMuted,
+            fontWeight: "800",
+        },
+        activeText: {
+            color: colors.primary,
+        },
+    });

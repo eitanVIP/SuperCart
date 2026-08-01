@@ -1,5 +1,6 @@
 import React, {createContext, ReactNode, useContext, useState} from 'react';
 import {PaperProvider, Snackbar} from 'react-native-paper';
+import {useTheme} from "@/theme/ThemeContext";
 
 interface SnackbarContextType {
     showSnackbar: (message: string) => void;
@@ -8,6 +9,7 @@ interface SnackbarContextType {
 const SnackbarContext = createContext<SnackbarContextType | undefined>(undefined);
 
 export const SnackbarProvider = ({ children }: { children: ReactNode }) => {
+    const { colors } = useTheme();
     const [visible, setVisible] = useState(false);
     const [text, setText] = useState('');
 
@@ -23,7 +25,8 @@ export const SnackbarProvider = ({ children }: { children: ReactNode }) => {
             <PaperProvider>
                 {children}
                 <Snackbar
-                    style={{ margin: 30, backgroundColor: '#F5F5F5' }}
+                    style={{ margin: 30, backgroundColor: colors.surfaceAlt }}
+                    theme={{ colors: { onSurface: colors.text, inverseOnSurface: colors.text } }}
                     visible={visible}
                     onDismiss={onDismiss}
                     duration={3000}

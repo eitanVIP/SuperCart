@@ -1,10 +1,14 @@
 import React, {useMemo, useState} from "react";
 import {Pressable, ScrollView, StyleSheet, Text, View} from "react-native";
 import * as Auth from "@/lib/auth";
+import {useTheme} from "@/theme/ThemeContext";
 
 const members = ["All", "You"];
 
 export function ProductList({ products, shopping = false, onAdd, onSelect, onToggle }) {
+	const { colors } = useTheme();
+	const styles = createStyles(colors);
+
 	const [member, setMember] = useState("All");
 	const [recurringOnly, setRecurringOnly] = useState(false);
 
@@ -21,13 +25,13 @@ export function ProductList({ products, shopping = false, onAdd, onSelect, onTog
 	);
 
 	return (
-		<View style={styles.root}>
+		<View style={staticStyles.root}>
 			{!shopping && (
 				<ScrollView
 					horizontal
-					style={styles.filtersScroll}
+					style={staticStyles.filtersScroll}
 					showsHorizontalScrollIndicator={false}
-					contentContainerStyle={styles.filters}
+					contentContainerStyle={staticStyles.filters}
 				>
 					{members.map((item) => (
 						<FilterButton
@@ -35,18 +39,20 @@ export function ProductList({ products, shopping = false, onAdd, onSelect, onTog
 							label={item}
 							active={member === item}
 							onPress={() => setMember(item)}
+							styles={styles}
 						/>
 					))}
 					<FilterButton
 						label="Recurring"
 						active={recurringOnly}
 						onPress={() => setRecurringOnly((value) => !value)}
+						styles={styles}
 					/>
 				</ScrollView>
 			)}
-			<ScrollView style={styles.listScroll} contentContainerStyle={styles.list}>
+			<ScrollView style={staticStyles.listScroll} contentContainerStyle={staticStyles.list}>
 				{visible.length === 0 ? (
-					<EmptyState shopping={shopping} onAdd={onAdd} />
+					<EmptyState shopping={shopping} onAdd={onAdd} styles={styles} />
 				) : (
 					visible.map((item, index) => (
 						<React.Fragment key={item.id}>
@@ -61,6 +67,7 @@ export function ProductList({ products, shopping = false, onAdd, onSelect, onTog
 								shopping={shopping}
 								onSelect={() => onSelect(item)}
 								onToggle={() => onToggle(item)}
+								styles={styles}
 							/>
 						</React.Fragment>
 					))
@@ -69,7 +76,7 @@ export function ProductList({ products, shopping = false, onAdd, onSelect, onTog
 		</View>
 	);
 }
-function FilterButton({ label, active, onPress }) {
+function FilterButton({ label, active, onPress, styles }) {
 	return (
 		<Pressable onPress={onPress} style={[styles.filter, active && styles.filterActive]}>
 			<Text numberOfLines={1} style={[styles.filterText, active && styles.filterTextActive]}>
@@ -78,11 +85,11 @@ function FilterButton({ label, active, onPress }) {
 		</Pressable>
 	);
 }
-function ProductRow({ item, shopping, onSelect, onToggle }) {
+function ProductRow({ item, shopping, onSelect, onToggle, styles }) {
 	return (
 		<Pressable
 			onPress={onSelect}
-			style={[styles.item, shopping && item.isChecked && styles.checkedItem]}
+			style={[styles.item, shopping && item.isChecked && staticStyles.checkedItem]}
 		>
 			{shopping && (
 				<Pressable
@@ -93,15 +100,15 @@ function ProductRow({ item, shopping, onSelect, onToggle }) {
 					{item.isChecked && <Text style={styles.check}>✓</Text>}
 				</Pressable>
 			)}
-			<View style={styles.itemBody}>
-				<View style={styles.itemTitleRow}>
-					<Text style={[styles.itemName, shopping && item.isChecked && styles.strike]}>
+			<View style={staticStyles.itemBody}>
+				<View style={staticStyles.itemTitleRow}>
+					<Text style={[styles.itemName, shopping && item.isChecked && staticStyles.strike]}>
 						{item.name}
 					</Text>
 					{item.isRecurring && <Text style={styles.recurring}>RECURRING</Text>}
 				</View>
 				{Boolean(item.description) && (
-					<Text style={[styles.description, shopping && item.isChecked && styles.strike]}>
+					<Text style={[styles.description, shopping && item.isChecked && staticStyles.strike]}>
 						{item.description}
 					</Text>
 				)}
@@ -111,9 +118,9 @@ function ProductRow({ item, shopping, onSelect, onToggle }) {
 		</Pressable>
 	);
 }
-function EmptyState({ shopping, onAdd }) {
+function EmptyState({ shopping, onAdd, styles }) {
 	return (
-		<View style={styles.empty}>
+		<View style={staticStyles.empty}>
 			<View style={styles.emptyMark}>
 				<View style={styles.emptyLine} />
 				<View style={styles.emptyLine} />
@@ -135,98 +142,103 @@ function EmptyState({ shopping, onAdd }) {
 		</View>
 	);
 }
-const styles = StyleSheet.create({
+
+const staticStyles = StyleSheet.create({
 	root: { flex: 1 },
 	filtersScroll: { flexGrow: 0 },
 	filters: { paddingHorizontal: 20, paddingVertical: 14, gap: 9 },
-	filter: {
-		height: 37,
-		paddingHorizontal: 15,
-		borderRadius: 20,
-		borderWidth: 1,
-		borderColor: "#D8E6DD",
-		backgroundColor: "#FFF",
-		justifyContent: "center",
-	},
-	filterActive: { backgroundColor: "#DCF2E5", borderColor: "#93CDAA" },
-	filterText: { fontSize: 13, color: "#587062", fontWeight: "700" },
-	filterTextActive: { color: "#166A45" },
 	list: { paddingHorizontal: 20, paddingTop: 5, paddingBottom: 110 },
 	listScroll: { flex: 1 },
-	section: {
-		fontSize: 10,
-		letterSpacing: 1.2,
-		fontWeight: "800",
-		color: "#7A8D82",
-		marginTop: 12,
-		marginBottom: 9,
-	},
-	item: {
-		minHeight: 80,
-		backgroundColor: "#FFF",
-		borderWidth: 1,
-		borderColor: "#E2ECE6",
-		borderRadius: 16,
-		marginBottom: 10,
-		padding: 12,
-		flexDirection: "row",
-		alignItems: "center",
-	},
 	checkedItem: { opacity: 0.52 },
-	checkbox: {
-		width: 27,
-		height: 27,
-		borderRadius: 8,
-		borderWidth: 2,
-		borderColor: "#B7C9BE",
-		alignItems: "center",
-		justifyContent: "center",
-		marginRight: 12,
-	},
-	checkboxActive: { backgroundColor: "#177A50", borderColor: "#177A50" },
-	check: { color: "#FFF", fontWeight: "900", fontSize: 16 },
 	itemBody: { flex: 1 },
 	itemTitleRow: { flexDirection: "row", alignItems: "center", gap: 7 },
-	itemName: { fontSize: 16, fontWeight: "800", color: "#1B3326" },
-	recurring: {
-		fontSize: 8,
-		letterSpacing: 0.6,
-		fontWeight: "900",
-		color: "#177A50",
-		backgroundColor: "#E6F5EC",
-		paddingHorizontal: 6,
-		paddingVertical: 3,
-		borderRadius: 5,
-	},
-	description: { fontSize: 12, color: "#718178", marginTop: 3 },
-	byline: { fontSize: 11, color: "#819087", marginTop: 6 },
 	strike: { textDecorationLine: "line-through" },
-	arrow: { fontSize: 27, color: "#91A097" },
 	empty: { paddingTop: 90, alignItems: "center", paddingHorizontal: 34 },
-	emptyMark: {
-		width: 62,
-		height: 62,
-		borderRadius: 18,
-		backgroundColor: "#E4F3EA",
-		padding: 15,
-		gap: 6,
-		marginBottom: 17,
-	},
-	emptyLine: { height: 5, borderRadius: 3, backgroundColor: "#6FB48B" },
-	emptyTitle: { fontSize: 19, fontWeight: "800", color: "#1B3326" },
-	emptyText: {
-		fontSize: 14,
-		color: "#718178",
-		lineHeight: 20,
-		textAlign: "center",
-		marginTop: 8,
-	},
-	emptyButton: {
-		marginTop: 19,
-		paddingHorizontal: 18,
-		paddingVertical: 12,
-		borderRadius: 12,
-		backgroundColor: "#177A50",
-	},
-	emptyButtonText: { color: "#FFF", fontWeight: "800" },
 });
+
+const createStyles = (colors) =>
+	StyleSheet.create({
+		filter: {
+			height: 37,
+			paddingHorizontal: 15,
+			borderRadius: 20,
+			borderWidth: 1,
+			borderColor: colors.borderLight,
+			backgroundColor: colors.surface,
+			justifyContent: "center",
+		},
+		filterActive: { backgroundColor: colors.primaryLighter, borderColor: colors.border },
+		filterText: { fontSize: 13, color: colors.textSecondary, fontWeight: "700" },
+		filterTextActive: { color: colors.primaryDark },
+		section: {
+			fontSize: 10,
+			letterSpacing: 1.2,
+			fontWeight: "800",
+			color: colors.textMuted,
+			marginTop: 12,
+			marginBottom: 9,
+		},
+		item: {
+			minHeight: 80,
+			backgroundColor: colors.card,
+			borderWidth: 1,
+			borderColor: colors.border,
+			borderRadius: 16,
+			marginBottom: 10,
+			padding: 12,
+			flexDirection: "row",
+			alignItems: "center",
+		},
+		checkbox: {
+			width: 27,
+			height: 27,
+			borderRadius: 8,
+			borderWidth: 2,
+			borderColor: colors.checkboxBorder,
+			alignItems: "center",
+			justifyContent: "center",
+			marginRight: 12,
+		},
+		checkboxActive: { backgroundColor: colors.checkboxFilled, borderColor: colors.checkboxFilled },
+		check: { color: colors.onPrimary, fontWeight: "900", fontSize: 16 },
+		itemName: { fontSize: 16, fontWeight: "800", color: colors.text },
+		recurring: {
+			fontSize: 8,
+			letterSpacing: 0.6,
+			fontWeight: "900",
+			color: colors.primary,
+			backgroundColor: colors.primaryLighter,
+			paddingHorizontal: 6,
+			paddingVertical: 3,
+			borderRadius: 5,
+		},
+		description: { fontSize: 12, color: colors.textMuted, marginTop: 3 },
+		byline: { fontSize: 11, color: colors.textFaint, marginTop: 6 },
+		arrow: { fontSize: 27, color: colors.iconMuted },
+		emptyMark: {
+			width: 62,
+			height: 62,
+			borderRadius: 18,
+			backgroundColor: colors.primaryLighter,
+			padding: 15,
+			gap: 6,
+			marginBottom: 17,
+		},
+		emptyLine: { height: 5, borderRadius: 3, backgroundColor: colors.primaryLight },
+		emptyTitle: { fontSize: 19, fontWeight: "800", color: colors.text },
+		emptyText: {
+			fontSize: 14,
+			color: colors.textMuted,
+			lineHeight: 20,
+			textAlign: "center",
+			marginTop: 8,
+		},
+		emptyButton: {
+			marginTop: 19,
+			paddingHorizontal: 18,
+			paddingVertical: 12,
+			borderRadius: 12,
+			backgroundColor: colors.primary,
+		},
+		emptyButtonText: { color: colors.onPrimary, fontWeight: "800" },
+	});

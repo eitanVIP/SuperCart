@@ -21,11 +21,15 @@ import {
 import {log} from "@/lib/util";
 import {useSnackbar} from "@/context/SnackbarContext";
 import {Family, Product} from "@/lib/types";
+import {useTheme} from "@/theme/ThemeContext";
 
 const { width } = Dimensions.get("window");
 const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
 
 export default function MainApp() {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
+
     const [page, setPage] = useState(0);
     const [sheet, setSheet] = useState(null);
     const [selected, setSelected] = useState(null);
@@ -114,8 +118,8 @@ export default function MainApp() {
                 onAction={signOut}
             />
 
-            <View style={styles.pagerViewport} {...pan.panHandlers}>
-                <Animated.View style={[styles.pages, { transform: [{ translateX }] }]}>
+            <View style={staticStyles.pagerViewport} {...pan.panHandlers}>
+                <Animated.View style={[staticStyles.pages, { transform: [{ translateX }] }]}>
                     <Page>
                         <GroceriesScreen
                             products={family.weekProducts}
@@ -202,32 +206,36 @@ export default function MainApp() {
     );
 }
 function Page({ children }) {
-    return <View style={styles.page}>{children}</View>;
+    return <View style={staticStyles.page}>{children}</View>;
 }
 
-const styles = StyleSheet.create({
-    root: { flex: 1, backgroundColor: "#F6FAF7" },
+const staticStyles = StyleSheet.create({
     pagerViewport: { flex: 1, overflow: "hidden" },
     pages: { flex: 1, flexDirection: "row", width: width * 3 },
     page: { width, flex: 1 },
     header: { paddingHorizontal: 20, paddingTop: 21 },
-    eyebrow: { fontSize: 10, fontWeight: "800", letterSpacing: 1.2, color: "#6F8176" },
-    title: { fontSize: 28, fontWeight: "800", color: "#193126", marginTop: 6 },
-    sub: { fontSize: 14, color: "#62766A", marginTop: 5 },
-    fab: {
-        position: "absolute",
-        bottom: 88,
-        right: 21,
-        width: 57,
-        height: 57,
-        borderRadius: 19,
-        backgroundColor: "#177A50",
-        alignItems: "center",
-        justifyContent: "center",
-        shadowColor: "#0B3E26",
-        shadowOpacity: 0.25,
-        shadowRadius: 10,
-        elevation: 6,
-    },
-    fabText: { color: "#FFF", fontSize: 31, fontWeight: "300", lineHeight: 34 },
 });
+
+const createStyles = (colors) =>
+    StyleSheet.create({
+        root: { flex: 1, backgroundColor: colors.background },
+        eyebrow: { fontSize: 10, fontWeight: "800", letterSpacing: 1.2, color: colors.textMuted },
+        title: { fontSize: 28, fontWeight: "800", color: colors.text, marginTop: 6 },
+        sub: { fontSize: 14, color: colors.textSecondary, marginTop: 5 },
+        fab: {
+            position: "absolute",
+            bottom: 88,
+            right: 21,
+            width: 57,
+            height: 57,
+            borderRadius: 19,
+            backgroundColor: colors.primary,
+            alignItems: "center",
+            justifyContent: "center",
+            shadowColor: colors.shadow,
+            shadowOpacity: 0.25,
+            shadowRadius: 10,
+            elevation: 6,
+        },
+        fabText: { color: colors.onPrimary, fontSize: 31, fontWeight: "300", lineHeight: 34 },
+    });

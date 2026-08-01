@@ -1,20 +1,24 @@
 import React from "react";
 import {ActivityIndicator, Pressable, StyleSheet, Text, TextInput, type TextInputProps, View} from "react-native";
+import {useTheme} from "@/theme/ThemeContext";
 
 export function PrimaryButton({
-	label,
-	onPress,
-	disabled = false,
-}: {
+								  label,
+								  onPress,
+								  disabled = false,
+							  }: {
 	label: string;
 	onPress: () => void;
 	disabled?: boolean;
 }) {
+	const { colors } = useTheme();
+	const styles = createStyles(colors);
+
 	return (
 		<Pressable
 			disabled={disabled}
 			onPress={onPress}
-			style={[styles.primary, disabled && styles.disabled]}
+			style={[styles.primary, disabled && staticStyles.disabled]}
 		>
 			<Text style={styles.primaryText}>{label}</Text>
 		</Pressable>
@@ -22,26 +26,32 @@ export function PrimaryButton({
 }
 
 export function Field({ label, ...props }: TextInputProps & { label: string }) {
+	const { colors } = useTheme();
+	const styles = createStyles(colors);
+
 	return (
 		<View>
 			<Text style={styles.inputLabel}>{label}</Text>
-			<TextInput style={styles.input} placeholderTextColor="#88958D" {...props} />
+			<TextInput style={styles.input} placeholderTextColor={colors.placeholder} {...props} />
 		</View>
 	);
 }
 
 export function TopBar({
-	title,
-	action,
-	onAction,
-}: {
+						   title,
+						   action,
+						   onAction,
+					   }: {
 	title: string;
 	action?: string | null;
 	onAction?: () => void;
 }) {
+	const { colors } = useTheme();
+	const styles = createStyles(colors);
+
 	return (
 		<View style={styles.topBar}>
-			<View style={styles.brand}>
+			<View style={staticStyles.brand}>
 				<View style={styles.brandMark}>
 					<Text style={styles.brandLetter}>S</Text>
 				</View>
@@ -57,66 +67,73 @@ export function TopBar({
 }
 
 export function LoadingIndicator() {
+	const { colors } = useTheme();
+
 	return (
-		<View style={{
-			flex: 1,
-			justifyContent: 'center',
-			alignItems: 'center',
-		}}>
-			<ActivityIndicator size={50} color="#177A50" />
+		<View style={staticStyles.loadingContainer}>
+			<ActivityIndicator size={50} color={colors.primary} />
 		</View>
 	);
 }
 
-const styles = StyleSheet.create({
-	primary: {
-		height: 52,
-		backgroundColor: "#177A50",
-		alignItems: "center",
-		justifyContent: "center",
-		borderRadius: 14,
-		marginTop: 20,
-	},
+const staticStyles = StyleSheet.create({
 	disabled: { opacity: 0.45 },
-	primaryText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
-	inputLabel: {
-		fontSize: 10,
-		color: "#65746B",
-		fontWeight: "800",
-		letterSpacing: 1,
-		marginTop: 15,
-		marginBottom: 7,
-	},
-	input: {
-		height: 52,
-		backgroundColor: "#FFFFFF",
-		borderWidth: 1,
-		borderColor: "#DCE7E0",
-		borderRadius: 13,
-		paddingHorizontal: 14,
-		fontSize: 15,
-		color: "#193126",
-	},
-	topBar: {
-		height: 62,
-		paddingHorizontal: 20,
-		backgroundColor: "#FFFFFF",
-		borderBottomWidth: 1,
-		borderColor: "#E4ECE7",
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-	},
 	brand: { flexDirection: "row", alignItems: "center", gap: 9 },
-	brandMark: {
-		height: 32,
-		width: 32,
-		borderRadius: 10,
-		backgroundColor: "#177A50",
-		justifyContent: "center",
-		alignItems: "center",
+	loadingContainer: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center',
 	},
-	brandLetter: { color: "#FFF", fontWeight: "900", fontSize: 17 },
-	brandText: { color: "#173426", fontWeight: "800", fontSize: 17 },
-	topAction: { color: "#177A50", fontWeight: "800", fontSize: 14 },
 });
+
+const createStyles = (colors) =>
+	StyleSheet.create({
+		primary: {
+			height: 52,
+			backgroundColor: colors.primary,
+			alignItems: "center",
+			justifyContent: "center",
+			borderRadius: 14,
+			marginTop: 20,
+		},
+		primaryText: { color: colors.onPrimary, fontSize: 16, fontWeight: "800" },
+		inputLabel: {
+			fontSize: 10,
+			color: colors.textMuted,
+			fontWeight: "800",
+			letterSpacing: 1,
+			marginTop: 15,
+			marginBottom: 7,
+		},
+		input: {
+			height: 52,
+			backgroundColor: colors.surface,
+			borderWidth: 1,
+			borderColor: colors.borderLight,
+			borderRadius: 13,
+			paddingHorizontal: 14,
+			fontSize: 15,
+			color: colors.text,
+		},
+		topBar: {
+			height: 62,
+			paddingHorizontal: 20,
+			backgroundColor: colors.card,
+			borderBottomWidth: 1,
+			borderColor: colors.border,
+			flexDirection: "row",
+			alignItems: "center",
+			justifyContent: "space-between",
+		},
+		brandMark: {
+			height: 32,
+			width: 32,
+			borderRadius: 10,
+			backgroundColor: colors.primary,
+			justifyContent: "center",
+			alignItems: "center",
+		},
+		brandLetter: { color: colors.onPrimary, fontWeight: "900", fontSize: 17 },
+		brandText: { color: colors.text, fontWeight: "800", fontSize: 17 },
+		topAction: { color: colors.primary, fontWeight: "800", fontSize: 14 },
+	});

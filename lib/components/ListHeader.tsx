@@ -1,8 +1,12 @@
 import {StyleSheet, Text, View} from "react-native";
+import {useTheme} from "@/theme/ThemeContext";
 
 export default function ListHeader({ eyebrow, title, text }) {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
+
     return (
-        <View style={styles.header}>
+        <View style={staticStyles.header}>
             <Text style={styles.eyebrow}>{eyebrow}</Text>
             <Text style={styles.title}>{title}</Text>
             <Text style={styles.sub}>{text}</Text>
@@ -10,9 +14,13 @@ export default function ListHeader({ eyebrow, title, text }) {
     );
 }
 
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
     header: { paddingHorizontal: 20, paddingTop: 21 },
-    eyebrow: { fontSize: 10, fontWeight: "800", letterSpacing: 1.2, color: "#6F8176" },
-    title: { fontSize: 28, fontWeight: "800", color: "#193126", marginTop: 6 },
-    sub: { fontSize: 14, color: "#62766A", marginTop: 5 },
 });
+
+const createStyles = (colors) =>
+    StyleSheet.create({
+        eyebrow: { fontSize: 10, fontWeight: "800", letterSpacing: 1.2, color: colors.textMuted },
+        title: { fontSize: 28, fontWeight: "800", color: colors.text, marginTop: 6 },
+        sub: { fontSize: 14, color: colors.textSecondary, marginTop: 5 },
+    });

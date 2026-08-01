@@ -1,5 +1,5 @@
 import React, {createContext, useContext, useEffect, useState} from "react";
-import {useColorScheme} from "react-native";
+import {Appearance, useColorScheme} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {darkColors, lightColors, ThemeColors} from "./colors";
 
@@ -29,6 +29,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             setLoaded(true);
         });
     }, []);
+
+    useEffect(() => {
+        if (mode === "system") {
+            Appearance.setColorScheme('unspecified'); // follow OS
+        } else {
+            Appearance.setColorScheme(mode); // force light/dark
+        }
+    }, [mode]);
 
     const setMode = (newMode: ThemeMode) => {
         setModeState(newMode);

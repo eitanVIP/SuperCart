@@ -1,7 +1,11 @@
 import React, {useEffect, useRef} from "react";
 import {Alert, Animated, Modal, PanResponder, Pressable, StyleSheet, Text, View,} from "react-native";
+import {useTheme} from "@/theme/ThemeContext";
 
 export function FamilyManagementSheet({ visible, family, onClose, onLeave }) {
+	const { colors } = useTheme();
+	const styles = createStyles(colors);
+
 	const offset = useRef(new Animated.Value(0)).current;
 	useEffect(() => {
 		if (visible) offset.setValue(0);
@@ -14,16 +18,16 @@ export function FamilyManagementSheet({ visible, family, onClose, onLeave }) {
 			onPanResponderRelease: (_, g) =>
 				g.dy > 105 || g.vy > 1
 					? Animated.timing(offset, {
-							toValue: 600,
-							duration: 170,
-							useNativeDriver: true,
-						}).start(onClose)
+						toValue: 600,
+						duration: 170,
+						useNativeDriver: true,
+					}).start(onClose)
 					: Animated.spring(offset, {
-							toValue: 0,
-							useNativeDriver: true,
-							damping: 21,
-							stiffness: 260,
-						}).start(),
+						toValue: 0,
+						useNativeDriver: true,
+						damping: 21,
+						stiffness: 260,
+					}).start(),
 		}),
 	).current;
 	if (!family) return null;
@@ -31,7 +35,7 @@ export function FamilyManagementSheet({ visible, family, onClose, onLeave }) {
 		<Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
 			<Pressable style={styles.backdrop} onPress={onClose} />
 			<Animated.View style={[styles.sheet, { transform: [{ translateY: offset }] }]}>
-				<View {...pan.panHandlers} style={styles.dragArea}>
+				<View {...pan.panHandlers} style={staticStyles.dragArea}>
 					<View style={styles.handle} />
 				</View>
 				<Text style={styles.title}>Manage family</Text>
@@ -48,10 +52,12 @@ export function FamilyManagementSheet({ visible, family, onClose, onLeave }) {
 					</Pressable>
 				</View>
 				<Text style={styles.label}>SCHEDULE</Text>
-				<Row label="Week starts on" value={family.weekStartDay || "Sunday"} />
+				<Row label="Week starts on" value={family.weekStartDay || "Sunday"} colors={colors} styles={styles} />
 				<Row
 					label="Shopping days"
 					value={(family.shoppingDays || []).join(", ") || "Not set"}
+					colors={colors}
+					styles={styles}
 				/>
 				<Pressable
 					onPress={() =>
@@ -68,7 +74,7 @@ export function FamilyManagementSheet({ visible, family, onClose, onLeave }) {
 		</Modal>
 	);
 }
-function Row({ label, value }) {
+function Row({ label, value, colors, styles }) {
 	return (
 		<View style={styles.row}>
 			<Text style={styles.rowLabel}>{label}</Text>
@@ -76,67 +82,72 @@ function Row({ label, value }) {
 		</View>
 	);
 }
-const styles = StyleSheet.create({
-	backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,.16)" },
-	sheet: {
-		position: "absolute",
-		bottom: 0,
-		left: 0,
-		right: 0,
-		backgroundColor: "#FFF",
-		borderTopLeftRadius: 26,
-		borderTopRightRadius: 26,
-		paddingHorizontal: 22,
-		paddingBottom: 34,
-	},
+
+const staticStyles = StyleSheet.create({
 	dragArea: { height: 34, justifyContent: "center", alignItems: "center" },
-	handle: { height: 5, width: 40, borderRadius: 3, backgroundColor: "#D6E1DA" },
-	title: { fontSize: 24, fontWeight: "800", color: "#183226" },
-	sub: { fontSize: 14, color: "#728178", marginTop: 5 },
-	card: {
-		backgroundColor: "#FFF",
-		borderWidth: 1,
-		borderColor: "#E1E9E4",
-		padding: 16,
-		borderRadius: 16,
-		marginTop: 21,
-	},
-	familyName: { fontSize: 17, fontWeight: "800", color: "#1D3A2B" },
-	label: {
-		fontSize: 10,
-		letterSpacing: 1,
-		fontWeight: "800",
-		color: "#6C8073",
-		marginTop: 17,
-		marginBottom: 7,
-	},
-	codeRow: {
-		height: 47,
-		borderRadius: 11,
-		backgroundColor: "#FFF",
-		paddingHorizontal: 13,
-		alignItems: "center",
-		flexDirection: "row",
-	},
-	code: { fontSize: 19, letterSpacing: 3, fontWeight: "800", color: "#176442", flex: 1 },
-	copy: { fontWeight: "800", fontSize: 13, color: "#177A50" },
-	row: {
-		height: 46,
-		flexDirection: "row",
-		alignItems: "center",
-		borderBottomWidth: 1,
-		borderColor: "#E3ECE6",
-	},
-	rowLabel: { fontSize: 14, fontWeight: "700", color: "#294235", flex: 1 },
-	rowValue: { fontSize: 14, color: "#177A50", fontWeight: "700" },
-	leave: {
-		height: 51,
-		borderRadius: 13,
-		borderWidth: 1,
-		borderColor: "#EBCFD0",
-		alignItems: "center",
-		justifyContent: "center",
-		marginTop: 25,
-	},
-	leaveText: { color: "#BE494D", fontWeight: "800" },
 });
+
+const createStyles = (colors) =>
+	StyleSheet.create({
+		backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.overlay },
+		sheet: {
+			position: "absolute",
+			bottom: 0,
+			left: 0,
+			right: 0,
+			backgroundColor: colors.surface,
+			borderTopLeftRadius: 26,
+			borderTopRightRadius: 26,
+			paddingHorizontal: 22,
+			paddingBottom: 34,
+		},
+		handle: { height: 5, width: 40, borderRadius: 3, backgroundColor: colors.borderLight },
+		title: { fontSize: 24, fontWeight: "800", color: colors.text },
+		sub: { fontSize: 14, color: colors.textMuted, marginTop: 5 },
+		card: {
+			backgroundColor: colors.card,
+			borderWidth: 1,
+			borderColor: colors.border,
+			padding: 16,
+			borderRadius: 16,
+			marginTop: 21,
+		},
+		familyName: { fontSize: 17, fontWeight: "800", color: colors.text },
+		label: {
+			fontSize: 10,
+			letterSpacing: 1,
+			fontWeight: "800",
+			color: colors.textMuted,
+			marginTop: 17,
+			marginBottom: 7,
+		},
+		codeRow: {
+			height: 47,
+			borderRadius: 11,
+			backgroundColor: colors.surfaceAlt,
+			paddingHorizontal: 13,
+			alignItems: "center",
+			flexDirection: "row",
+		},
+		code: { fontSize: 19, letterSpacing: 3, fontWeight: "800", color: colors.primaryDark, flex: 1 },
+		copy: { fontWeight: "800", fontSize: 13, color: colors.primary },
+		row: {
+			height: 46,
+			flexDirection: "row",
+			alignItems: "center",
+			borderBottomWidth: 1,
+			borderColor: colors.divider,
+		},
+		rowLabel: { fontSize: 14, fontWeight: "700", color: colors.text, flex: 1 },
+		rowValue: { fontSize: 14, color: colors.primary, fontWeight: "700" },
+		leave: {
+			height: 51,
+			borderRadius: 13,
+			borderWidth: 1,
+			borderColor: colors.dangerLight,
+			alignItems: "center",
+			justifyContent: "center",
+			marginTop: 25,
+		},
+		leaveText: { color: colors.danger, fontWeight: "800" },
+	});
