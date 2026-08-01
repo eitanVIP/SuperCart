@@ -1,48 +1,50 @@
 import React, {useMemo, useState} from "react";
 import {Pressable, ScrollView, StyleSheet, Text, View} from "react-native";
+import * as Auth from "@/lib/auth";
 
 const members = ["All", "You"];
 
 export function ProductList({ products, shopping = false, onAdd, onSelect, onToggle }) {
 	const [member, setMember] = useState("All");
 	const [recurringOnly, setRecurringOnly] = useState(false);
+
 	const visible = useMemo(
 		() =>
 			products
 				.filter(
 					(item) =>
-						(member === "All" || item.addedByName === member) &&
+						(member === "All" || (member === "You" && item.addedByUserId == Auth.getCurrentUser().uid)) &&
 						(!recurringOnly || item.isRecurring),
 				)
-				.sort((a, b) => Number(b.isRecurring) - Number(a.isRecurring)),
+				.sort((a, b) => Number(a.isRecurring) - Number(b.isRecurring)),
 		[products, member, recurringOnly],
 	);
+
 	return (
 		<View style={styles.root}>
 			{!shopping && (
-				<>
-					<ScrollView
-						horizontal
-						showsHorizontalScrollIndicator={false}
-						contentContainerStyle={styles.filters}
-					>
-						{members.map((item) => (
-							<FilterButton
-								key={item}
-								label={item}
-								active={member === item}
-								onPress={() => setMember(item)}
-							/>
-						))}
+				<ScrollView
+					horizontal
+					style={styles.filtersScroll}
+					showsHorizontalScrollIndicator={false}
+					contentContainerStyle={styles.filters}
+				>
+					{members.map((item) => (
 						<FilterButton
-							label="Recurring"
-							active={recurringOnly}
-							onPress={() => setRecurringOnly((value) => !value)}
+							key={item}
+							label={item}
+							active={member === item}
+							onPress={() => setMember(item)}
 						/>
-					</ScrollView>
-				</>
+					))}
+					<FilterButton
+						label="Recurring"
+						active={recurringOnly}
+						onPress={() => setRecurringOnly((value) => !value)}
+					/>
+				</ScrollView>
 			)}
-			<ScrollView contentContainerStyle={styles.list}>
+			<ScrollView style={styles.listScroll} contentContainerStyle={styles.list}>
 				{visible.length === 0 ? (
 					<EmptyState shopping={shopping} onAdd={onAdd} />
 				) : (
@@ -135,6 +137,7 @@ function EmptyState({ shopping, onAdd }) {
 }
 const styles = StyleSheet.create({
 	root: { flex: 1 },
+	filtersScroll: { flexGrow: 0 },
 	filters: { paddingHorizontal: 20, paddingVertical: 14, gap: 9 },
 	filter: {
 		height: 37,
@@ -149,6 +152,7 @@ const styles = StyleSheet.create({
 	filterText: { fontSize: 13, color: "#587062", fontWeight: "700" },
 	filterTextActive: { color: "#166A45" },
 	list: { paddingHorizontal: 20, paddingTop: 5, paddingBottom: 110 },
+	listScroll: { flex: 1 },
 	section: {
 		fontSize: 10,
 		letterSpacing: 1.2,

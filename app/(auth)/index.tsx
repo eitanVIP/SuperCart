@@ -88,7 +88,7 @@ export default function AuthScreen() {
         setLoading(true);
 
         Auth.signUp(email, password).then(userCred => {
-            Auth.updateProfile(name).then(() => {
+            Auth.updateProfile(name, null).then(() => {
                 router.push("/(auth)/family-gate");
             }).catch(err => {
                 log("Sign Up", getAuthErrorMessage(err), showSnackbar);

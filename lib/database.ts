@@ -12,7 +12,7 @@ import {
 import {db, storage} from './firebaseConfig';
 import * as ImageManipulator from 'expo-image-manipulator';
 import {Image} from 'react-native';
-import {getDownloadURL, ref, uploadBytes} from "firebase/storage";
+import {deleteObject, getDownloadURL, ref, uploadBytes} from "firebase/storage";
 
 export function collection(name: string): CollectionReference<DocumentData> {
     return fsCollection(db, name);
@@ -102,4 +102,19 @@ export async function uploadImage(
     const downloadUrl = await getDownloadURL(storageRef);
 
     return downloadUrl;
+}
+
+export async function removeImage(url: string | null): Promise<void> {
+    if (!url) return;
+
+    const storageRef = ref(storage, url);
+
+    try {
+        await deleteObject(storageRef);
+    } catch (error: any) {
+        if (error?.code === "storage/object-not-found") {
+            return;
+        }
+        throw error;
+    }
 }

@@ -9,7 +9,6 @@ export interface Family {
 
 export interface Product {
 	id: string;
-	familyId: string;
 	name: string;
 	description: string;
 	imageUrl: string | null;
@@ -17,6 +16,20 @@ export interface Product {
 	addedByName: string;
 	isRecurring: boolean;
 	isChecked: boolean;
+}
+
+export interface ProductDatabase {
+	name: string;
+	description: string;
+	imageUrl: string | null;
+	addedByUserId: string;
+	isRecurring: boolean;
+	isChecked: boolean;
+}
+
+export interface Profile {
+	name: string;
+	photoUrl: string | null;
 }
 
 export type ProductValues = Pick<Product, "name" | "description" | "isRecurring" | "imageUrl">;

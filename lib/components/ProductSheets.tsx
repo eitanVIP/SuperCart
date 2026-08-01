@@ -120,7 +120,7 @@ export function AddProductSheet({ visible, onCloseSheet, onAdd }) {
 	);
 }
 
-export function EditProductSheet({ item, visible, onClose, onSave }) {
+export function EditProductSheet({ item, visible, onCloseSheet, onSave }) {
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 	const [isRecurring, setRecurring] = useState(false);
@@ -137,19 +137,32 @@ export function EditProductSheet({ item, visible, onClose, onSave }) {
 
 	if (!item) return null;
 
-	const save = async () => {
-		if (!name.trim()) return Alert.alert("Item name required");
-		await onSave(item.id, {
-			name: name.trim(),
-			description: description.trim(),
-			isRecurring,
+	function onClose() {
+		setImageUrl(null);
+		setRecurring(false);
+		setName("");
+		setDescription("");
+		onCloseSheet();
+	}
+
+	async function save() {
+		if (!name) {
+			Alert.alert("Item name required", "Please input a name.");
+			return;
+		}
+
+		await onSave(item, {
+			name: name,
+			description: description,
 			imageUrl,
+			isRecurring,
 		});
+
 		onClose();
-	};
+	}
 
 	return (
-		<BottomSheet isPresented={visible} onDismiss={onClose} snapPoints={["full"]}>
+		<BottomSheet visible={visible} onClose={onClose}>
 			<Text style={styles.title}>Edit item</Text>
 			<PhotoControl uri={imageUrl} onChange={setImageUrl} />
 			<Text style={styles.label}>ITEM NAME</Text>
@@ -197,7 +210,7 @@ export function DetailsSheet({ item, visible, onClose, onEdit, onDelete }) {
 	if (!item) return null;
 
 	return (
-		<BottomSheet isPresented={visible} onDismiss={onClose} snapPoints={["full"]}>
+		<BottomSheet visible={visible} onClose={onClose}>
 			{item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.detailImage} />}
 			<Text style={styles.title}>{item.name}</Text>
 			{item.description ? (

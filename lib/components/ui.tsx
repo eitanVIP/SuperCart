@@ -1,5 +1,5 @@
 import React from "react";
-import {Pressable, StyleSheet, Text, TextInput, type TextInputProps, View} from "react-native";
+import {ActivityIndicator, Pressable, StyleSheet, Text, TextInput, type TextInputProps, View} from "react-native";
 
 export function PrimaryButton({
 	label,
@@ -20,6 +20,7 @@ export function PrimaryButton({
 		</Pressable>
 	);
 }
+
 export function Field({ label, ...props }: TextInputProps & { label: string }) {
 	return (
 		<View>
@@ -28,6 +29,7 @@ export function Field({ label, ...props }: TextInputProps & { label: string }) {
 		</View>
 	);
 }
+
 export function TopBar({
 	title,
 	action,
@@ -53,6 +55,19 @@ export function TopBar({
 		</View>
 	);
 }
+
+export function LoadingIndicator() {
+	return (
+		<View style={{
+			flex: 1,
+			justifyContent: 'center',
+			alignItems: 'center',
+		}}>
+			<ActivityIndicator size={50} color="#177A50" />
+		</View>
+	);
+}
+
 const styles = StyleSheet.create({
 	primary: {
 		height: 52,

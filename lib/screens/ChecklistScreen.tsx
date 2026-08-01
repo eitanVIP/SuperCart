@@ -5,7 +5,7 @@ import {View} from "react-native";
 
 export default function ChecklistScreen({products, openDetails, toggleProduct}) {
     return (
-        <View style={{ flexDirection: "column" }}>
+        <View style={{ flexDirection: "column", flex: 1 }}>
             <ListHeader
                 eyebrow="AT THE STORE"
                 title="ChecklistScreen"
