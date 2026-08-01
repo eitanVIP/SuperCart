@@ -1,19 +1,15 @@
 import React from "react";
 import {Pressable, StyleSheet, Text, View} from "react-native";
 import {useTheme} from "@/theme/ThemeContext";
+import {Ionicons} from "@expo/vector-icons";
 
 const tabs = [
-	{ icon: "HOME", label: "Home" },
-	{ icon: "LIST", label: "ChecklistScreen" },
-	{ icon: "SET", label: "Settings" },
+	{ icon: "home", label: "List" },
+	{ icon: "checkmark-circle", label: "Checklist" },
+	{ icon: "settings-sharp", label: "Settings" },
 ];
-export function BottomNav({
-							  index,
-							  onChange,
-						  }: {
-	index: number;
-	onChange: (index: number) => void;
-}) {
+
+export function BottomNav({index, onChange,}: { index: number; onChange: (index: number) => void; }) {
 	const { colors } = useTheme();
 	const styles = createStyles(colors);
 
@@ -21,10 +17,8 @@ export function BottomNav({
 		<View style={styles.nav}>
 			{tabs.map((tab, tabIndex) => (
 				<Pressable key={tab.label} style={staticStyles.tab} onPress={() => onChange(tabIndex)}>
-					<Text style={[styles.icon, index === tabIndex && styles.active]}>
-						{tab.icon}
-					</Text>
-					<Text style={[styles.label, index === tabIndex && styles.active]}>
+					<Ionicons name={tab.icon} size={index === tabIndex ? 22 : 18} color={colors.navInactive} style={index === tabIndex && styles.active} />
+					<Text style={[styles.label, index === tabIndex && styles.activeLabel]}>
 						{tab.label}
 					</Text>
 					{index === tabIndex && <View style={styles.dot} />}
@@ -48,8 +42,8 @@ const createStyles = (colors) =>
 			flexDirection: "row",
 			paddingTop: 8,
 		},
-		icon: { fontSize: 9, letterSpacing: 0.3, fontWeight: "900", color: colors.navInactive, height: 22 },
 		label: { fontSize: 10, fontWeight: "700", color: colors.navInactive },
 		active: { color: colors.navActive },
+		activeLabel: { color: colors.navActive, fontSize: 11 },
 		dot: { height: 4, width: 4, borderRadius: 2, backgroundColor: colors.navActive, marginTop: 3 },
 	});
