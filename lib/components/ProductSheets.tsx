@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
 	},
 	switchTitle: { fontSize: 15, fontWeight: "800", color: "#1D372A" },
 	switchSub: { fontSize: 12, color: "#7B8A81", marginTop: 3 },
-	detailImage: { height: 145, borderRadius: 16, marginBottom: 17 },
+	detailImage: { aspectRatio: 1, width: "80%", alignSelf: "center", borderRadius: 16, marginBottom: 17 },
 	detailText: { fontSize: 15, color: "#617269", marginTop: 9 },
 	detailMuted: { fontSize: 15, color: "#88958D", marginTop: 9 },
 	metadata: {
