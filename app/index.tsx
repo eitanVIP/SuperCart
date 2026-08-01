@@ -1,8 +1,8 @@
 import {StyleSheet} from "react-native";
 import {router} from "expo-router";
-import {SafeAreaView} from "react-native-safe-area-context";
 import {useEffect} from "react";
 import * as Auth from "@/lib/auth";
+import {LoadingIndicator} from "@/lib/components/ui";
 
 export default function LandingPage() {
 	useEffect(() => {
@@ -17,10 +17,7 @@ export default function LandingPage() {
 	}, []);
 
 	return (
-		<SafeAreaView>
-			{/*<Text>Hi</Text>*/}
-			{/*<Link href="/(auth)">Log In</Link>*/}
-		</SafeAreaView>
+		<LoadingIndicator />
 	);
 }
 

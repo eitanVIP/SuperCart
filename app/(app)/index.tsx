@@ -14,6 +14,7 @@ import * as Auth from "@/lib/auth";
 import {getCurrentUser} from "@/lib/auth";
 import {
     addProductToDatabase,
+    deleteProductInDatabase,
     isUserInFamily,
     loadFamilyFromDatabase,
     updateProductInDatabase,
@@ -157,13 +158,10 @@ export default function MainApp() {
                 visible={sheet === "add"}
                 onCloseSheet={() => setSheet(null)}
                 onAdd={(product: { name: string; description: string; imageUrl: string; isRecurring: boolean; }) => {
-                    addProductToDatabase(family, product.name, product.description, product.imageUrl, product.isRecurring).then(product => {
-                        const newFamily = {
-                            ...family,
-                            allProducts: [...family.allProducts, product],
-                            weekProducts: [...family.weekProducts, product],
-                        };
+                    addProductToDatabase(family, product.name, product.description, product.imageUrl, product.isRecurring).then(newFamily => {
                         setFamily(newFamily);
+                    }).catch(err => {
+                        log("Main App", "failed to add product: " + err.message, showSnackbar);
                     });
                 }}
             />
@@ -172,24 +170,30 @@ export default function MainApp() {
                 visible={sheet === "details"}
                 onClose={() => setSheet(null)}
                 onEdit={() => setSheet("edit")}
-                onDelete={() => {}}
+                onDelete={(product: Product) => {
+                    deleteProductInDatabase(family, product.id, false).then(newFamily => {
+                        setFamily(newFamily);
+                    }).catch(err => {
+                        log("Main App", "failed to delete product: " + err.message, showSnackbar);
+                    });
+                }}
+                onDeleteUlt={(product: Product) => {
+                    deleteProductInDatabase(family, product.id, true).then(newFamily => {
+                        setFamily(newFamily);
+                    }).catch(err => {
+                        log("Main App", "failed to delete product: " + err.message, showSnackbar);
+                    });
+                }}
             />
             <EditProductSheet
                 item={selected}
                 visible={sheet === "edit"}
                 onCloseSheet={() => setSheet(null)}
                 onSave={(product: Product, newData: { name: string; description: string; imageUrl: string; isRecurring: boolean; }) => {
-                    updateProductInDatabase(family, product, newData.name, newData.description, newData.imageUrl, newData.isRecurring).then(updatedProduct => {
-                        const newFamily = {
-                            ...family,
-                            allProducts: family.allProducts.map(p =>
-                                p.id === updatedProduct.id ? updatedProduct : p
-                            ),
-                            weekProducts: family.weekProducts.map(p =>
-                                p.id === updatedProduct.id ? updatedProduct : p
-                            ),
-                        };
+                    updateProductInDatabase(family, product, newData.name, newData.description, newData.imageUrl, newData.isRecurring).then(newFamily => {
                         setFamily(newFamily);
+                    }).catch(err => {
+                        log("Main App", "failed to edit product: " + err.message, showSnackbar);
                     });
                 }}
             />

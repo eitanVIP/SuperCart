@@ -42,18 +42,18 @@ export async function addDocument(
     return ref.id;
 }
 
-export async function loadCollection(
-    coll: CollectionReference<DocumentData>
-): Promise<{ id: string; data: DocumentData }[]> {
-    const snap = await getDocs(coll);
-    return snap.docs.map(d => ({ id: d.id, data: d.data() }));
-}
-
 export async function deleteDocument(
     coll: CollectionReference<DocumentData>,
     id: string
 ): Promise<void> {
     await deleteDoc(doc(coll, id));
+}
+
+export async function loadCollection(
+    coll: CollectionReference<DocumentData>
+): Promise<{ id: string; data: DocumentData }[]> {
+    const snap = await getDocs(coll);
+    return snap.docs.map(d => ({ id: d.id, data: d.data() }));
 }
 
 export async function uploadImage(

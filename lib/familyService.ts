@@ -1,6 +1,7 @@
 import {
     addDocument,
     collection,
+    deleteDocument,
     loadCollection,
     loadDocument,
     removeImage,
@@ -10,7 +11,7 @@ import {
 import {Family, Product, ProductDatabase} from "@/lib/types";
 import * as Auth from '@/lib/auth';
 import {readProfile} from '@/lib/auth';
-import {arrayUnion, deleteField} from 'firebase/firestore';
+import {arrayRemove, arrayUnion, deleteField} from 'firebase/firestore';
 
 function generateFamilyCode(length = 6): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no O/0/I/1 to avoid confusion
@@ -147,7 +148,7 @@ export async function addProductToDatabase(
     description: string,
     imageUrl: string | null,
     isRecurring: boolean
-): Promise<Product> {
+): Promise<Family> {
     const user = Auth.getCurrentUser()!;
     const userId = user.uid;
 
@@ -180,8 +181,8 @@ export async function addProductToDatabase(
         weekProducts: arrayUnion(productId),
     });
 
-    // 5. Return product
-    return {
+    // 5. Build new product, then return family with it added
+    const newProduct: Product = {
         id: productId,
         name: name,
         description: description,
@@ -189,7 +190,13 @@ export async function addProductToDatabase(
         addedByUserId: userId,
         addedByName: addedByName,
         isRecurring: isRecurring,
-        isChecked: false
+        isChecked: false,
+    };
+
+    return {
+        ...family,
+        allProducts: [...family.allProducts, newProduct],
+        weekProducts: [...family.weekProducts, newProduct],
     };
 }
 
@@ -200,7 +207,7 @@ export async function updateProductInDatabase(
     description: string,
     imageUrl: string | null,
     isRecurring: boolean
-): Promise<Product> {
+): Promise<Family> {
     const user = Auth.getCurrentUser()!;
     const userId = user.uid;
 
@@ -208,18 +215,21 @@ export async function updateProductInDatabase(
     const profile = await readProfile();
     const addedByName = profile && profile.name ? profile.name : 'Unknown';
 
-    // 2. Remove current product photo
-    try {
-        await removeImage(product.imageUrl);
-    } catch (error) {
-        console.log("Failed to remove old product image: " + error);
-        console.log(product);
-    }
+    let firebaseImageUrl: string | null = imageUrl;
+    // Only remove and reupload image if given imageUrl is from phone and not from database (if image is from database the user didn't change the image)
+    if (!imageUrl.startsWith("https")) {
+        // 2. Remove current product photo
+        try {
+            await removeImage(product.imageUrl);
+        } catch (error) {
+            console.log("Failed to remove old product image: " + error);
+            console.log(product);
+        }
 
-    // 3. Process and upload product photo to firebase storage
-    let firebaseImageUrl: string | null = null;
-    if (imageUrl)
-        firebaseImageUrl = await uploadImage(imageUrl, family.id);
+        // 3. Process and upload product photo to firebase storage
+        if (imageUrl)
+            firebaseImageUrl = await uploadImage(imageUrl, family.id);
+    }
 
     // 4. Change product's document
     const productsColl = collection(`families/${family.id}/allProducts`);
@@ -235,8 +245,8 @@ export async function updateProductInDatabase(
 
     await saveDocument(productsColl, product.id, newProductData);
 
-    // 5. Return product
-    return {
+    // 5. Build updated product, then return family with it swapped in
+    const updatedProduct: Product = {
         id: product.id,
         name: name,
         description: description,
@@ -244,7 +254,17 @@ export async function updateProductInDatabase(
         addedByUserId: userId,
         addedByName: addedByName,
         isRecurring: isRecurring,
-        isChecked: product.isChecked
+        isChecked: product.isChecked,
+    };
+
+    return {
+        ...family,
+        allProducts: family.allProducts.map(p =>
+            p.id === updatedProduct.id ? updatedProduct : p
+        ),
+        weekProducts: family.weekProducts.map(p =>
+            p.id === updatedProduct.id ? updatedProduct : p
+        ),
     };
 }
 
@@ -284,4 +304,23 @@ async function loadProductsFromDatabase(family: Family): Promise<{ allProducts: 
     }
 
     return { allProducts, weekProducts };
+}
+
+export async function deleteProductInDatabase(family: Family, productId: string, deleteUltimately: boolean): Promise<Family> {
+    await saveDocument(collection('families'), family.id, {
+        weekProducts: arrayRemove(productId),
+    });
+
+    if (deleteUltimately) {
+        const allProductsCol = collection(`families/${family.id}/allProducts`);
+        await deleteDocument(allProductsCol, productId);
+    }
+
+    return {
+        ...family,
+        allProducts: deleteUltimately
+            ? family.allProducts.filter(p => p.id !== productId)
+            : family.allProducts,
+        weekProducts: family.weekProducts.filter(p => p.id !== productId),
+    };
 }

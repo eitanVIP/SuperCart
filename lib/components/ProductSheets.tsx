@@ -213,7 +213,7 @@ function RecurringSwitch({ value, onChange, colors, styles }) {
     );
 }
 
-export function DetailsSheet({ item, visible, onClose, onEdit, onDelete }) {
+export function DetailsSheet({ item, visible, onClose, onEdit, onDelete, onDeleteUlt }) {
     const { colors } = useTheme();
     const styles = createStyles(colors);
 
@@ -239,13 +239,24 @@ export function DetailsSheet({ item, visible, onClose, onEdit, onDelete }) {
                 <Pressable
                     style={styles.remove}
                     onPress={() =>
-                        Alert.alert("Delete item?", `Remove ${item.name} from the family list?`, [
-                            { text: "Cancel", style: "cancel" },
+                        Alert.alert("Delete item?", `Remove ${item.name} from this week's list or remove forever?`, [
                             {
-                                text: "Delete",
+                                text: "Cancel",
+                                style: "cancel"
+                            },
+                            {
+                                text: "Delete ultimately",
                                 style: "destructive",
                                 onPress: () => {
-                                    onDelete(item.id);
+                                    onDeleteUlt(item);
+                                    onClose();
+                                },
+                            },
+                            {
+                                text: "Delete from this week",
+                                style: "destructive",
+                                onPress: () => {
+                                    onDelete(item);
                                     onClose();
                                 },
                             },
