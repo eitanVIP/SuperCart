@@ -20,7 +20,7 @@ export default function FamilyGate() {
 
     Family.isUserInFamily().then(result => {
         if (result) {
-            router.push("/(app)");
+            router.replace("/(app)");
         }
     }).catch(err => {
         log("Family Gate", err.message, showSnackbar);
@@ -42,7 +42,7 @@ export default function FamilyGate() {
             }
 
             Family.createFamilyInDatabase(name).then(newFamily => {
-                router.push("/(app)");
+                router.replace("/(app)");
             }).catch(err => {
                 log("Family Gate", err.message, showSnackbar);
             }).finally(() => {
@@ -70,7 +70,7 @@ export default function FamilyGate() {
             }
 
             Family.joinFamilyFromDatabase(code).then(family => {
-                router.push("/(app)");
+                router.replace("/(app)");
             }).catch(err => {
                 log("Family Gate", err.message, showSnackbar);
             }).finally(() => {
@@ -84,7 +84,7 @@ export default function FamilyGate() {
 
     function signOut() {
         Auth.signOut();
-        router.push("/(auth)");
+        router.replace("/(auth)");
     }
 
     return (

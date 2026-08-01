@@ -3,6 +3,8 @@ import {auth} from './firebaseConfig';
 import {collection, loadDocument, saveDocument} from "@/lib/database";
 import {DocumentData} from "firebase/firestore";
 import {Profile} from "@/lib/types";
+import firebase from "firebase/compat/app";
+import User = firebase.User;
 
 export function signIn(email: string, password: string) {
     return signInWithEmailAndPassword(auth, email, password);
@@ -28,4 +30,8 @@ export function signOut() {
 
 export function getCurrentUser() {
     return auth.currentUser;
+}
+
+export function onAuthStateChanged(callback: (user: User | null) => void) {
+    return auth.onAuthStateChanged(callback);
 }

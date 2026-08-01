@@ -39,7 +39,7 @@ export default function MainApp() {
 
     function signOut() {
         Auth.signOut();
-        router.push("/(auth)");
+        router.replace("/(auth)");
     }
 
     const translateX = useRef(new Animated.Value(0)).current;
@@ -82,14 +82,14 @@ export default function MainApp() {
     };
 
     if (!getCurrentUser()) {
-        router.push("/(auth)");
+        router.replace("/(auth)");
         return (<></>);
     }
 
     if (!family) {
         isUserInFamily().then(result => {
             if (!result) {
-                router.push("/(auth)/family-gate");
+                router.replace("/(auth)/family-gate");
                 return;
             }
 
@@ -97,11 +97,11 @@ export default function MainApp() {
                 setFamily(family);
             }).catch(err => {
                 log("Main App", "failed to load family: " + err.message, showSnackbar);
-                router.push("/(auth)/family-gate");
+                router.replace("/(auth)/family-gate");
             });
         }).catch(err => {
             log("Main App", "failed to check family: " + err.message, showSnackbar);
-            router.push("/(auth)/family-gate");
+            router.replace("/(auth)/family-gate");
         });
 
         return (

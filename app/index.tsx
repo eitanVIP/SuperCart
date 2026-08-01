@@ -1,22 +1,25 @@
-import {StyleSheet, Text} from "react-native";
-import {Link, router} from "expo-router";
+import {StyleSheet} from "react-native";
+import {router} from "expo-router";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {useEffect} from "react";
 import * as Auth from "@/lib/auth";
 
 export default function LandingPage() {
 	useEffect(() => {
-		if (Auth.getCurrentUser()) {
-			router.push('/(app)');
-		}
+		const unsubscribe = Auth.onAuthStateChanged((user) => {
+			if (user) {
+				router.replace('/(app)');
+			} else {
+				router.replace('/(auth)');
+			}
+		});
+		return unsubscribe;
 	}, []);
-	if (Auth.getCurrentUser())
-		return null;
 
 	return (
 		<SafeAreaView>
-			<Text>Hi</Text>
-			<Link href="/(auth)">Log In</Link>
+			{/*<Text>Hi</Text>*/}
+			{/*<Link href="/(auth)">Log In</Link>*/}
 		</SafeAreaView>
 	);
 }

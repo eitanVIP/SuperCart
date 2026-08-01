@@ -22,12 +22,13 @@ export default function AuthScreen() {
     const [name, setName] = useState('');
 
     useEffect(() => {
-        if (Auth.getCurrentUser()) {
-            router.push('/(app)');
-        }
+        const unsubscribe = Auth.onAuthStateChanged((user) => {
+            if (user) {
+                router.replace('/(app)');
+            }
+        });
+        return unsubscribe;
     }, []);
-    if (Auth.getCurrentUser())
-        return null;
 
     function getAuthErrorMessage(err: any): string {
         switch (err.code) {
@@ -75,7 +76,7 @@ export default function AuthScreen() {
         setLoading(true);
 
         Auth.signIn(email, password).then(userCred => {
-            router.push("/(auth)/family-gate");
+            router.replace("/(auth)/family-gate");
         }).catch(err => {
             log("Sign In", getAuthErrorMessage(err), showSnackbar);
         }).finally(() => {
@@ -93,7 +94,7 @@ export default function AuthScreen() {
 
         Auth.signUp(email, password).then(userCred => {
             Auth.updateProfile(name, null).then(() => {
-                router.push("/(auth)/family-gate");
+                router.replace("/(auth)/family-gate");
             }).catch(err => {
                 log("Sign Up", getAuthErrorMessage(err), showSnackbar);
             });
