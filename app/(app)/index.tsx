@@ -18,6 +18,7 @@ import {
     deleteProductInDatabase,
     isUserInFamily,
     loadFamilyFromDatabase,
+    toggleProductInDatabase,
     updateProductInDatabase,
 } from "@/lib/familyService";
 import {log} from "@/lib/util";
@@ -127,14 +128,19 @@ export default function MainApp() {
                             products={family.weekProducts}
                             setSheet={setSheet}
                             openDetails={openDetails}
-                            toggleProduct={() => {}}
                         />
                     </Page>
                     <Page>
                         <ChecklistScreen
                             products={family.weekProducts}
                             openDetails={openDetails}
-                            toggleProduct={() => {}}
+                            toggleProduct={(product: Product) => {
+                                toggleProductInDatabase(family, product).then(newFamily => {
+                                    setFamily(newFamily);
+                                }).catch(err => {
+                                    log("Main App", "Failed to toggle product: " + err.message, showSnackbar);
+                                });
+                            }}
                         />
                     </Page>
                     <Page>

@@ -298,6 +298,45 @@ export async function updateProductInDatabase(
     };
 }
 
+export async function toggleProductInDatabase(
+    family: Family,
+    product: Product
+): Promise<Family> {
+    const productsColl = collection(`families/${family.id}/allProducts`);
+
+    const newProductData: ProductDatabase = {
+        name: product.name,
+        description: product.description,
+        imageUrl: product.imageUrl,
+        addedByUserId: product.addedByUserId,
+        isRecurring: product.isRecurring,
+        isChecked: !product.isChecked,
+    };
+
+    saveDocument(productsColl, product.id, newProductData); // No await to update ui immediately
+
+    const updatedProduct: Product = {
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        imageUrl: product.imageUrl,
+        addedByUserId: product.addedByUserId,
+        addedByName: product.addedByName,
+        isRecurring: product.isRecurring,
+        isChecked: !product.isChecked,
+    };
+
+    return {
+        ...family,
+        allProducts: family.allProducts.map(p =>
+            p.id === updatedProduct.id ? updatedProduct : p
+        ),
+        weekProducts: family.weekProducts.map(p =>
+            p.id === updatedProduct.id ? updatedProduct : p
+        ),
+    };
+}
+
 async function loadProductsFromDatabase(family: Family): Promise<{ allProducts: Product[], weekProducts: Product[] }> {
     if (!Auth.getCurrentUser())
         throw new Error('User not logged in');

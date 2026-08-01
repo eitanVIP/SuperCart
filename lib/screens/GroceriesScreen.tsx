@@ -3,7 +3,7 @@ import {ProductList} from "../components/ProductList";
 import ListHeader from "../components/ListHeader";
 import {View} from "react-native";
 
-export default function GroceriesScreen({products, setSheet, openDetails, toggleProduct}) {
+export default function GroceriesScreen({products, setSheet, openDetails}) {
     return (
         <View style={{ flexDirection: "column", flex: 1 }}>
             <ListHeader
@@ -15,7 +15,7 @@ export default function GroceriesScreen({products, setSheet, openDetails, toggle
                 products={products}
                 onAdd={() => setSheet("add")}
                 onSelect={openDetails}
-                onToggle={toggleProduct}
+                onToggle={() => {}}
             />
         </View>
     );

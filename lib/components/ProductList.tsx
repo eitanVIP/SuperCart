@@ -26,30 +26,28 @@ export function ProductList({ products, shopping = false, onAdd, onSelect, onTog
 
 	return (
 		<View style={staticStyles.root}>
-			{!shopping && (
-				<ScrollView
-					horizontal
-					style={staticStyles.filtersScroll}
-					showsHorizontalScrollIndicator={false}
-					contentContainerStyle={staticStyles.filters}
-				>
-					{members.map((item) => (
-						<FilterButton
-							key={item}
-							label={item}
-							active={member === item}
-							onPress={() => setMember(item)}
-							styles={styles}
-						/>
-					))}
+			<ScrollView
+				horizontal
+				style={staticStyles.filtersScroll}
+				showsHorizontalScrollIndicator={false}
+				contentContainerStyle={staticStyles.filters}
+			>
+				{members.map((item) => (
 					<FilterButton
-						label="Recurring"
-						active={recurringOnly}
-						onPress={() => setRecurringOnly((value) => !value)}
+						key={item}
+						label={item}
+						active={member === item}
+						onPress={() => setMember(item)}
 						styles={styles}
 					/>
-				</ScrollView>
-			)}
+				))}
+				<FilterButton
+					label="Recurring"
+					active={recurringOnly}
+					onPress={() => setRecurringOnly((value) => !value)}
+					styles={styles}
+				/>
+			</ScrollView>
 			<ScrollView style={staticStyles.listScroll} contentContainerStyle={staticStyles.list}>
 				{visible.length === 0 ? (
 					<EmptyState shopping={shopping} onAdd={onAdd} styles={styles} />
