@@ -14,6 +14,7 @@ import * as Auth from "@/lib/auth";
 import {getCurrentUser} from "@/lib/auth";
 import {
     addProductToDatabase,
+    addProductToThisWeekInDatabase,
     deleteProductInDatabase,
     isUserInFamily,
     loadFamilyFromDatabase,
@@ -164,6 +165,15 @@ export default function MainApp() {
                         log("Main App", "failed to add product: " + err.message, showSnackbar);
                     });
                 }}
+                allProducts={family.allProducts}
+                weekProducts={family.weekProducts}
+                onAddFromHistory={(product: Product) => {
+                    addProductToThisWeekInDatabase(family, product).then(newFamily => {
+                        setFamily(newFamily);
+                    }).catch(err => {
+                        log("Main App", "failed to add product from history: " + err.message, showSnackbar);
+                    });
+                }}
             />
             <DetailsSheet
                 item={selected}
@@ -171,14 +181,14 @@ export default function MainApp() {
                 onClose={() => setSheet(null)}
                 onEdit={() => setSheet("edit")}
                 onDelete={(product: Product) => {
-                    deleteProductInDatabase(family, product.id, false).then(newFamily => {
+                    deleteProductInDatabase(family, product, false).then(newFamily => {
                         setFamily(newFamily);
                     }).catch(err => {
                         log("Main App", "failed to delete product: " + err.message, showSnackbar);
                     });
                 }}
                 onDeleteUlt={(product: Product) => {
-                    deleteProductInDatabase(family, product.id, true).then(newFamily => {
+                    deleteProductInDatabase(family, product, true).then(newFamily => {
                         setFamily(newFamily);
                     }).catch(err => {
                         log("Main App", "failed to delete product: " + err.message, showSnackbar);

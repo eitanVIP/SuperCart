@@ -19,6 +19,7 @@ export function updateProfile(name: string, photoUrl: string | null) {
 }
 
 export async function readProfile(userId: string = getCurrentUser().uid): Promise<Profile | null> {
+    if (!userId) return null;
     const data: DocumentData = await loadDocument(collection(`users/${userId}/data`), "public");
     if (!data) return null;
     return { name: data.name, photoUrl: data.photoUrl };

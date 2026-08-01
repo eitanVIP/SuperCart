@@ -200,6 +200,36 @@ export async function addProductToDatabase(
     };
 }
 
+export async function addProductToThisWeekInDatabase(
+    family: Family,
+    product: Product,
+): Promise<Family> {
+    const userId = Auth.getCurrentUser()!.uid;
+
+    // Update addedByUserId
+    await saveDocument(collection(`families/${family.id}/allProducts`), product.id, {
+        addedByUserId: userId,
+    });
+
+    // Add product to this week
+    await saveDocument(collection('families'), family.id, {
+        weekProducts: arrayUnion(product.id),
+    });
+
+    const updatedProduct: Product = {
+        ...product,
+        addedByUserId: userId,
+    };
+
+    return {
+        ...family,
+        allProducts: family.allProducts.map(item =>
+            item.id === product.id ? updatedProduct : item
+        ),
+        weekProducts: [...family.weekProducts, updatedProduct],
+    };
+}
+
 export async function updateProductInDatabase(
     family: Family,
     product: Product,
@@ -306,21 +336,37 @@ async function loadProductsFromDatabase(family: Family): Promise<{ allProducts: 
     return { allProducts, weekProducts };
 }
 
-export async function deleteProductInDatabase(family: Family, productId: string, deleteUltimately: boolean): Promise<Family> {
+export async function deleteProductInDatabase(family: Family, product: Product, deleteUltimately: boolean): Promise<Family> {
+    // Remove week products' properties
+    await saveDocument(collection(`families/${family.id}/allProducts`), product.id, {
+        isRecurring: false,
+        addedByUserId: null,
+        isChecked: false
+    })
+
+    // Remove product from this week
     await saveDocument(collection('families'), family.id, {
-        weekProducts: arrayRemove(productId),
+        weekProducts: arrayRemove(product.id),
     });
 
     if (deleteUltimately) {
+        // Remove product forever
         const allProductsCol = collection(`families/${family.id}/allProducts`);
-        await deleteDocument(allProductsCol, productId);
+        await deleteDocument(allProductsCol, product.id);
     }
+
+    const newProduct: Product = {
+        ...product,
+        isRecurring: false,
+        addedByUserId: "",
+        isChecked: false
+    };
 
     return {
         ...family,
         allProducts: deleteUltimately
-            ? family.allProducts.filter(p => p.id !== productId)
-            : family.allProducts,
-        weekProducts: family.weekProducts.filter(p => p.id !== productId),
+            ? family.allProducts.filter(p => p.id !== product.id)
+            : family.allProducts.map(item => item.id === product.id ? newProduct : item),
+        weekProducts: family.weekProducts.filter(p => p.id !== product.id),
     };
 }

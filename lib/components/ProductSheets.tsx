@@ -4,6 +4,7 @@ import * as ImagePicker from "expo-image-picker";
 import {BottomSheet as ExpoBottomSheet, RNHostView} from '@expo/ui';
 import {PrimaryButton} from "./ui";
 import {useTheme} from "@/theme/ThemeContext";
+import {Product} from "@/lib/types";
 
 function PhotoControl({ uri, onChange, styles }) {
     async function takePhoto() {
@@ -67,20 +68,24 @@ export function BottomSheet({ children, visible, onClose }) {
     );
 }
 
-export function AddProductSheet({ visible, onCloseSheet, onAdd }) {
+export function AddProductSheet({ visible, onCloseSheet, onAdd, allProducts, weekProducts, onAddFromHistory }) {
     const { colors } = useTheme();
     const styles = createStyles(colors);
+    const [fromHistory, setFromHistory] = useState(false);
 
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [isRecurring, setRecurring] = useState(false);
     const [imageUrl, setImageUrl] = useState(null);
 
+    const historyProducts = allProducts.filter((item: Product) => !weekProducts.some((w: Product) => w.id === item.id));
+
     function onClose() {
         setImageUrl(null);
         setRecurring(false);
         setName("");
         setDescription("");
+        setFromHistory(false);
         onCloseSheet();
     }
 
@@ -95,31 +100,69 @@ export function AddProductSheet({ visible, onCloseSheet, onAdd }) {
         onClose();
     }
 
+    function addFromHistory(product: Product) {
+        onAddFromHistory(product);
+        onClose();
+    }
+
     return (
         <BottomSheet visible={visible} onClose={onClose}>
-            <Text style={styles.title}>Add an item</Text>
-            <Text style={styles.sub}>It will be shared with your family.</Text>
-            <PhotoControl uri={imageUrl} onChange={setImageUrl} styles={styles} />
-            <Text style={styles.label}>ITEM NAME</Text>
-            <TextInput
-                value={name}
-                onChangeText={setName}
-                placeholder="What do you need?"
-                placeholderTextColor={colors.placeholder}
-                style={styles.input}
-            />
-            <Text style={styles.label}>
-                DESCRIPTION <Text style={styles.optional}>OPTIONAL</Text>
-            </Text>
-            <TextInput
-                value={description}
-                onChangeText={setDescription}
-                placeholder="Quantity, type, or notes"
-                placeholderTextColor={colors.placeholder}
-                style={styles.input}
-            />
-            <RecurringSwitch value={isRecurring} onChange={setRecurring} colors={colors} styles={styles} />
-            <PrimaryButton label="Add to list" onPress={add} />
+            {!fromHistory && (<>
+                <Text style={styles.title}>Add an item</Text>
+                <Text style={styles.sub}>It will be shared with your family.</Text>
+                <PhotoControl uri={imageUrl} onChange={setImageUrl} styles={styles} />
+                <Text style={styles.label}>ITEM NAME</Text>
+                <TextInput
+                    value={name}
+                    onChangeText={setName}
+                    placeholder="What do you need?"
+                    placeholderTextColor={colors.placeholder}
+                    style={styles.input}
+                />
+                <Text style={styles.label}>
+                    DESCRIPTION <Text style={styles.optional}>OPTIONAL</Text>
+                </Text>
+                <TextInput
+                    value={description}
+                    onChangeText={setDescription}
+                    placeholder="Quantity, type, or notes"
+                    placeholderTextColor={colors.placeholder}
+                    style={styles.input}
+                />
+                <RecurringSwitch value={isRecurring} onChange={setRecurring} colors={colors} styles={styles} />
+                <PrimaryButton label="Add to list" onPress={add} />
+                <Pressable style={styles.button} onPress={() => {setFromHistory(true)}}>
+                    <Text style={styles.buttonText}>Add from history</Text>
+                </Pressable>
+            </>)}
+
+            {fromHistory && (<>
+                {historyProducts.length === 0 && (<>
+                    <Text style={styles.title}>No history items</Text>
+                </>)}
+                {historyProducts.map((item: Product) => (
+                    <Pressable
+                        key={item.id}
+                        onPress={() => addFromHistory(item)}
+                        style={styles.item}
+                    >
+                        <View style={staticStyles.itemBody}>
+                            <View style={staticStyles.itemTitleRow}>
+                                <Text style={styles.itemName}>
+                                    {item.name}
+                                </Text>
+                            </View>
+                            {Boolean(item.description) && (
+                                <Text style={styles.description}>
+                                    {item.description}
+                                </Text>
+                            )}
+                            <Text style={styles.byline}>Added by {item.addedByName}</Text>
+                        </View>
+                        <Text style={styles.arrow}>›</Text>
+                    </Pressable>
+                ))}
+            </>)}
         </BottomSheet>
     );
 }
@@ -233,8 +276,8 @@ export function DetailsSheet({ item, visible, onClose, onEdit, onDelete, onDelet
                 <Text style={styles.metadataValue}>{item.addedByName}</Text>
             </View>
             <View style={staticStyles.actions}>
-                <Pressable style={styles.edit} onPress={onEdit}>
-                    <Text style={styles.editText}>Edit item</Text>
+                <Pressable style={styles.button} onPress={onEdit}>
+                    <Text style={styles.buttonText}>Edit item</Text>
                 </Pressable>
                 <Pressable
                     style={styles.remove}
@@ -289,6 +332,10 @@ const staticStyles = StyleSheet.create({
     },
     detailImage: { aspectRatio: 1, width: "80%", alignSelf: "center", borderRadius: 16, marginBottom: 17 },
     actions: { flexDirection: "row", gap: 10, marginTop: 24 },
+    itemBody: { flex: 1 },
+    checkedItem: { opacity: 0.52 },
+    strike: { textDecorationLine: "line-through" },
+    itemTitleRow: { flexDirection: "row", alignItems: "center", gap: 7 },
 });
 
 const createStyles = (colors) =>
@@ -345,7 +392,7 @@ const createStyles = (colors) =>
         },
         metadataLabel: { fontSize: 10, letterSpacing: 1, fontWeight: "800", color: colors.textMuted },
         metadataValue: { fontSize: 15, fontWeight: "800", color: colors.text, marginTop: 4 },
-        edit: {
+        button: {
             flex: 1,
             height: 50,
             borderRadius: 13,
@@ -353,7 +400,7 @@ const createStyles = (colors) =>
             alignItems: "center",
             justifyContent: "center",
         },
-        editText: { fontWeight: "800", color: colors.onPrimary },
+        buttonText: { fontWeight: "800", color: colors.onPrimary },
         remove: {
             height: 50,
             paddingHorizontal: 20,
@@ -364,4 +411,19 @@ const createStyles = (colors) =>
             justifyContent: "center",
         },
         removeText: { fontWeight: "800", color: colors.danger },
+        item: {
+            minHeight: 80,
+            backgroundColor: colors.card,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: 16,
+            marginBottom: 10,
+            padding: 12,
+            flexDirection: "row",
+            alignItems: "center",
+        },
+        itemName: { fontSize: 16, fontWeight: "800", color: colors.text },
+        description: { fontSize: 12, color: colors.textMuted, marginTop: 3 },
+        arrow: { fontSize: 27, color: colors.iconMuted },
+        byline: { fontSize: 11, color: colors.textFaint, marginTop: 6 },
     });
