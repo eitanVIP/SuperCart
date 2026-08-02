@@ -29,7 +29,7 @@ import {useTheme} from "@/theme/ThemeContext";
 const { width } = Dimensions.get("window");
 const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
 
-export default function MainApp() {
+export default function MainAppPage() {
     const { colors } = useTheme();
     const styles = createStyles(colors);
 
@@ -92,7 +92,7 @@ export default function MainApp() {
     if (!family) {
         isUserInFamily().then(result => {
             if (!result) {
-                router.replace("/(auth)/family-gate");
+                router.replace("/(auth)/family-gate-page");
                 return;
             }
 
@@ -100,11 +100,11 @@ export default function MainApp() {
                 setFamily(family);
             }).catch(err => {
                 log("Main App", "failed to load family: " + err.message, showSnackbar);
-                router.replace("/(auth)/family-gate");
+                router.replace("/(auth)/family-gate-page");
             });
         }).catch(err => {
             log("Main App", "failed to check family: " + err.message, showSnackbar);
-            router.replace("/(auth)/family-gate");
+            router.replace("/(auth)/family-gate-page");
         });
 
         return (

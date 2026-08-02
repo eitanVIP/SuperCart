@@ -7,8 +7,9 @@ import {useSnackbar} from "@/context/SnackbarContext";
 import {log} from "@/lib/util";
 import * as Family from "@/lib/familyService";
 import {useTheme} from "@/theme/ThemeContext";
+import {KeyboardAwareScrollView} from "react-native-keyboard-controller";
 
-export default function FamilyGate() {
+export default function FamilyGatePage() {
     const { colors } = useTheme();
     const styles = createStyles(colors);
 
@@ -90,7 +91,11 @@ export default function FamilyGate() {
     return (
         <>
             <TopBar title="SuperCart" action="Log out" onAction={signOut} />
-            <View style={staticStyles.content}>
+            <KeyboardAwareScrollView
+                contentContainerStyle={staticStyles.content}
+                keyboardShouldPersistTaps="handled"
+                bottomOffset={120}
+            >
                 <Text style={styles.title}>Choose your family</Text>
                 <Text style={styles.intro}>
                     You need a shared family space before you can start a list.
@@ -124,7 +129,7 @@ export default function FamilyGate() {
                     />
                     <PrimaryButton disabled={loading} label="Join family" onPress={joinFamily} />
                 </View>
-            </View>
+            </KeyboardAwareScrollView>
         </>
     );
 }

@@ -1,18 +1,21 @@
-import {StyleSheet} from "react-native";
-import {SafeAreaProvider} from "react-native-safe-area-context";
+import {SafeAreaProvider, SafeAreaView} from "react-native-safe-area-context";
 import {Slot} from "expo-router";
 import {SnackbarProvider} from '../context/SnackbarContext';
 import {ThemeProvider, useTheme} from "@/theme/ThemeContext";
+import {StatusBar} from "expo-status-bar";
+import {KeyboardAvoidingView, Platform} from "react-native";
+import {KeyboardProvider} from "react-native-keyboard-controller";
 
-function MainLayout() {
+function ThemedStatusBar() {
+    const { resolvedTheme } = useTheme();
+    return <StatusBar style={resolvedTheme === "dark" ? "light" : "dark"} />;
+}
+
+function ThemedSafeAreaProvider({children}) {
     const { colors } = useTheme();
-    const styles = createStyles(colors);
-
     return (
-        <SafeAreaProvider style={styles.container}>
-            <SnackbarProvider>
-                <Slot />
-            </SnackbarProvider>
+        <SafeAreaProvider style={{flex: 1, backgroundColor: colors.background}}>
+            {children}
         </SafeAreaProvider>
     );
 }
@@ -20,15 +23,22 @@ function MainLayout() {
 export default function RootLayout() {
     return (
         <ThemeProvider>
-            <MainLayout />
+            <KeyboardProvider>
+                <ThemedStatusBar />
+                <ThemedSafeAreaProvider>
+                    <SafeAreaView edges={["top", "left", "right", "bottom"]} style={{ flex: 1 }}>
+                        <KeyboardAvoidingView
+                            // "padding" works best for iOS, "height" or undefined works best for Android
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            style={{flex: 1}}
+                        >
+                            <SnackbarProvider>
+                                <Slot />
+                            </SnackbarProvider>
+                        </KeyboardAvoidingView>
+                    </SafeAreaView>
+                </ThemedSafeAreaProvider>
+            </KeyboardProvider>
         </ThemeProvider>
     );
 }
-
-const createStyles = (colors) =>
-    StyleSheet.create({
-        container: {
-            flex: 1,
-            backgroundColor: colors.background,
-        },
-    });

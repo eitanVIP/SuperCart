@@ -1,4 +1,3 @@
-import {StyleSheet} from "react-native";
 import {router} from "expo-router";
 import {useEffect} from "react";
 import * as Auth from "@/lib/auth";
@@ -16,11 +15,5 @@ export default function LandingPage() {
 		return unsubscribe;
 	}, []);
 
-	return (
-		<LoadingIndicator />
-	);
+	return <LoadingIndicator />;
 }
-
-const styles = StyleSheet.create({
-
-});
