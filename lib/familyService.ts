@@ -162,8 +162,8 @@ export async function addProductToDatabase(
     const addedByName = profile && profile.name ? profile.name : 'Unknown';
 
     // 2. Process and upload product photo to firebase storage
-    let firebaseImageUrl: string | null = null;
-    if (imageUrl) {
+    let firebaseImageUrl: string | null = imageUrl;
+    if (imageUrl && !imageUrl.startsWith("http")) {
         const timestamp = Date.now();
         const storagePath = `${family.id}/product_image_${timestamp}.jpg`;
         firebaseImageUrl = await uploadImage(imageUrl, storagePath);
@@ -258,7 +258,7 @@ export async function updateProductInDatabase(
 
     let firebaseImageUrl: string | null = imageUrl;
     // Only remove and reupload image if given imageUrl is from phone and not from database (if image is from database the user didn't change the image)
-    if (!imageUrl.startsWith("https")) {
+    if (!imageUrl.startsWith("http")) {
         // 2. Remove current product photo
         try {
             await removeImage(product.imageUrl);
@@ -401,7 +401,7 @@ export async function deleteProductInDatabase(family: Family, product: Product, 
         isRecurring: false,
         addedByUserId: null,
         isChecked: false
-    })
+    });
 
     // Remove product from this week
     await saveDocument(collection('families'), family.id, {
@@ -419,6 +419,7 @@ export async function deleteProductInDatabase(family: Family, product: Product, 
         count: 1,
         isRecurring: false,
         addedByUserId: "",
+        addedByName: "Unknown",
         isChecked: false
     };
 

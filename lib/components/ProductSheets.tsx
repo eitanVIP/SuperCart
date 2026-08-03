@@ -1,11 +1,13 @@
 import React, {useEffect, useState} from "react";
 import {Alert, Image, Pressable, StyleSheet, Switch, Text, TextInput, View} from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import {BottomSheet, PrimaryButton} from "./ui";
+import {BottomSheet, PrimaryButton, PromptModal} from "./ui";
 import {useTheme} from "@/theme/ThemeContext";
 import {Product} from "@/lib/types";
 
 function PhotoControl({ uri, onChange, styles }) {
+    const [urlPromptVisible, setUrlPromptVisible] = useState(false);
+
     async function takePhoto() {
         const permission = await ImagePicker.requestCameraPermissionsAsync();
         if (!permission.granted)
@@ -48,7 +50,26 @@ function PhotoControl({ uri, onChange, styles }) {
                 <Pressable onPress={choosePhoto} style={styles.photoButton}>
                     <Text style={styles.photoButtonText}>Choose photo</Text>
                 </Pressable>
+                <Pressable onPress={() => setUrlPromptVisible(true)} style={styles.photoButton}>
+                    <Text style={styles.photoButtonText}>Use link</Text>
+                </Pressable>
             </View>
+            <PromptModal
+                visible={urlPromptVisible}
+                title="Image link"
+                placeholder="https://example.com/image.jpg"
+                confirmLabel="Use"
+                validate={(text) => {
+                    if (!text) return "Please enter a link.";
+                    if (!/^https?:\/\/.+/i.test(text)) return "Please enter a valid image URL.";
+                    return null;
+                }}
+                onCancel={() => setUrlPromptVisible(false)}
+                onConfirm={(url) => {
+                    onChange(url);
+                    setUrlPromptVisible(false);
+                }}
+            />
         </View>
     );
 }
@@ -148,12 +169,9 @@ export function AddProductSheet({ visible, onCloseSheet, onAdd, allProducts, wee
                                     {item.name}
                                 </Text>
                             </View>
-                            {Boolean(item.description) && (
-                                <Text style={styles.description}>
-                                    {item.description}
-                                </Text>
-                            )}
-                            <Text style={styles.byline}>Added by {item.addedByName}</Text>
+                            <Text style={styles.description}>
+                                {item.description === "" ? "No description" : item.description}
+                            </Text>
                         </View>
                         <Text style={styles.arrow}>›</Text>
                     </Pressable>
@@ -327,7 +345,7 @@ const staticStyles = StyleSheet.create({
         gap: 8
     },
     photoRow: { flexDirection: "row", gap: 11, marginTop: 17, alignItems: "center" },
-    preview: { height: 67, width: 67, borderRadius: 12 },
+    preview: { height: 100, aspectRatio: 1, borderRadius: 12 },
     photoButtons: { flex: 1, gap: 7 },
     switchRow: {
         paddingVertical: 16,
@@ -341,6 +359,7 @@ const staticStyles = StyleSheet.create({
     checkedItem: { opacity: 0.52 },
     strike: { textDecorationLine: "line-through" },
     itemTitleRow: { flexDirection: "row", alignItems: "center", gap: 7 },
+    urlRow: { flexDirection: "row", gap: 8, marginTop: 10, alignItems: "center" },
 });
 
 const createStyles = (colors) =>
@@ -366,8 +385,8 @@ const createStyles = (colors) =>
             color: colors.text,
         },
         previewBlank: {
-            height: 67,
-            width: 67,
+            height: 100,
+            aspectRatio: 1,
             borderRadius: 12,
             borderWidth: 1,
             borderColor: colors.borderOnSheet,
@@ -432,4 +451,14 @@ const createStyles = (colors) =>
         description: { fontSize: 12, color: colors.textMuted, marginTop: 3 },
         arrow: { fontSize: 27, color: colors.iconMuted },
         byline: { fontSize: 11, color: colors.textFaint, marginTop: 6 },
+        urlInput: {
+            flex: 1,
+            height: 42,
+            borderRadius: 10,
+            borderWidth: 1,
+            borderColor: colors.borderLight,
+            paddingHorizontal: 12,
+            color: colors.text,
+            fontSize: 14,
+        },
     });
