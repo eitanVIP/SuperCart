@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {
     ActivityIndicator,
+    Image,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -65,9 +66,7 @@ export function TopBar({
     return (
         <View style={styles.topBar}>
             <View style={staticStyles.brand}>
-                <View style={styles.brandMark}>
-                    <Text style={styles.brandLetter}>S</Text>
-                </View>
+                <Image source={require('@/assets/icon.png')} style={{height: 40, width: 40}} />
                 <Text style={styles.brandText}>{title}</Text>
             </View>
             {action && (

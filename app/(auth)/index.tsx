@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {ScrollView, StyleSheet, Text, TouchableOpacity, View} from "react-native";
+import {Image, ScrollView, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import {Field, PrimaryButton} from "@/lib/components/ui";
 import {router} from "expo-router";
 import * as Auth from '@/lib/auth';
@@ -108,9 +108,7 @@ export default function AuthPage() {
     return (
         <>
             <View style={staticStyles.hero}>
-                <View style={styles.logo}>
-                    <Text style={styles.logoText}>S</Text>
-                </View>
+                <Image source={require('@/assets/icon.png')} style={{height: 72, aspectRatio: 1}} />
                 <Text style={styles.title}>SuperCart</Text>
                 <Text style={styles.subtitle}>Shopping, made simple for your family.</Text>
             </View>
@@ -204,14 +202,6 @@ const createStyles = (colors) =>
             color: colors.primary,
         },
         root: { flex: 1, backgroundColor: colors.background },
-        logo: {
-            height: 58,
-            width: 58,
-            borderRadius: 19,
-            backgroundColor: colors.primary,
-            alignItems: "center",
-            justifyContent: "center",
-        },
         logoText: { fontSize: 30, fontWeight: "900", color: colors.onPrimary },
         title: { fontSize: 29, fontWeight: "800", color: colors.text, marginTop: 13 },
         subtitle: { fontSize: 15, color: colors.textSecondary, marginTop: 6 },
