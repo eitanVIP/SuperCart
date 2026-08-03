@@ -7,8 +7,7 @@ export default function ChecklistScreen({products, openDetails, toggleProduct}) 
     return (
         <View style={{ flexDirection: "column", flex: 1 }}>
             <ListHeader
-                eyebrow="AT THE STORE"
-                title="ChecklistScreen"
+                title="Checklist"
                 text={`${products.filter((item) => item.isChecked).length} of ${products.length} items collected.`}
             />
             <ProductList

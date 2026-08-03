@@ -1,8 +1,7 @@
 import React, {useEffect, useState} from "react";
-import {Alert, Image, Pressable, StyleSheet, Switch, Text, TextInput, useWindowDimensions, View} from "react-native";
+import {Alert, Image, Pressable, StyleSheet, Switch, Text, TextInput, View} from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import {BottomSheet as ExpoBottomSheet, RNHostView} from '@expo/ui';
-import {PrimaryButton} from "./ui";
+import {BottomSheet, PrimaryButton} from "./ui";
 import {useTheme} from "@/theme/ThemeContext";
 import {Product} from "@/lib/types";
 
@@ -51,20 +50,6 @@ function PhotoControl({ uri, onChange, styles }) {
                 </Pressable>
             </View>
         </View>
-    );
-}
-
-export function BottomSheet({ children, visible, onClose }) {
-    const { width } = useWindowDimensions();
-
-    return (
-        <ExpoBottomSheet isPresented={visible} onDismiss={onClose} snapPoints={["0%"]}>
-            <RNHostView matchContents>
-                <View style={[staticStyles.sheet, {width}]}>
-                    {children}
-                </View>
-            </RNHostView>
-        </ExpoBottomSheet>
     );
 }
 
@@ -250,7 +235,7 @@ function RecurringSwitch({ value, onChange, colors, styles }) {
                 value={value}
                 onValueChange={onChange}
                 trackColor={{ false: colors.borderLight, true: colors.primaryLight }}
-                thumbColor={value ? colors.primary : colors.surface}
+                thumbColor={value ? colors.primary : colors.primaryLight}
             />
         </View>
     );
@@ -354,7 +339,7 @@ const createStyles = (colors) =>
         input: {
             height: 50,
             borderWidth: 1,
-            borderColor: colors.borderLight,
+            borderColor: colors.borderOnSheet,
             borderRadius: 12,
             paddingHorizontal: 13,
             fontSize: 15,
@@ -365,7 +350,7 @@ const createStyles = (colors) =>
             width: 67,
             borderRadius: 12,
             borderWidth: 1,
-            borderColor: colors.borderLight,
+            borderColor: colors.borderOnSheet,
             alignItems: "center",
             justifyContent: "center",
         },
@@ -374,7 +359,7 @@ const createStyles = (colors) =>
             height: 30,
             borderRadius: 9,
             borderWidth: 1,
-            borderColor: colors.border,
+            borderColor: colors.borderOnSheet,
             justifyContent: "center",
             paddingHorizontal: 11,
         },
@@ -388,7 +373,7 @@ const createStyles = (colors) =>
             padding: 15,
             borderRadius: 13,
             borderWidth: 1,
-            borderColor: colors.border,
+            borderColor: colors.borderOnSheet,
         },
         metadataLabel: { fontSize: 10, letterSpacing: 1, fontWeight: "800", color: colors.textMuted },
         metadataValue: { fontSize: 15, fontWeight: "800", color: colors.text, marginTop: 4 },
@@ -400,7 +385,7 @@ const createStyles = (colors) =>
             alignItems: "center",
             justifyContent: "center",
         },
-        buttonText: { fontWeight: "800", color: colors.onPrimary },
+        buttonText: { fontWeight: "800", color: colors.text },
         remove: {
             height: 50,
             paddingHorizontal: 20,

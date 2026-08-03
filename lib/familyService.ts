@@ -24,7 +24,7 @@ function generateFamilyCode(length = 6): string {
 
 export async function createFamilyInDatabase(name: string, maxAttempts = 5): Promise<Family> {
     const userId = Auth.getCurrentUser()!.uid;
-    const users = collection('users');
+    const userDataCollection = collection(`users/${userId}/data`);
     const families = collection('families');
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -38,7 +38,7 @@ export async function createFamilyInDatabase(name: string, maxAttempts = 5): Pro
             });
 
             // Family doc created successfully — link the user to it
-            await saveDocument(users, userId, { familyCode: code });
+            await saveDocument(userDataCollection, "private", { familyCode: code });
 
             return {
                 id: code,
@@ -78,26 +78,6 @@ export async function loadFamilyFromDatabase(): Promise<Family> {
         throw new Error(`No family found with code "${code}".`);
     }
 
-    // 3. Load the products subcollection for this family
-    // const productsColl = collection(`families/${code}/allProducts`);
-    // const productDocs = await loadCollection(productsColl);
-    //
-    // const allProducts: Product[] = productDocs.map(({ id, data }) => ({
-    //     id,
-    //     familyId: code,
-    //     name: data.name,
-    //     description: data.description,
-    //     imageUrl: data.imageUrl ?? null,
-    //     addedByUserId: data.addedByUserId,
-    //     addedByName: data.addedByName,
-    //     isRecurring: data.isRecurring ?? false,
-    //     isChecked: data.isChecked ?? false,
-    // }));
-    //
-    // // 4. Resolve weekProductIds -> actual Product objects from allProducts
-    // const weekProductIds: string[] = familyData.weekProductIds ?? [];
-    // const weekProducts: Product[] = allProducts.filter(p => weekProductIds.includes(p.id));
-
     let family: Family = {
         id: code,
         name: familyData.name,
@@ -117,10 +97,10 @@ export async function loadFamilyFromDatabase(): Promise<Family> {
 
 export async function joinFamilyFromDatabase(code: string): Promise<Family> {
     const userId = Auth.getCurrentUser()!.uid;
-    const users = collection('users');
+    const userDataCollection = collection(`users/${userId}/data`);
 
-    // 1. Tentatively set the family code on the user's own doc
-    await saveDocument(users, userId, { familyCode: code });
+    // 1. Tentatively set the family code on the user's own private doc
+    await saveDocument(userDataCollection, "private", { familyCode: code });
 
     // 2. Try to load it — loadFamily reads the user's own familyCode,
     //    which we just set to `code`, so this checks that exact family.
@@ -128,8 +108,8 @@ export async function joinFamilyFromDatabase(code: string): Promise<Family> {
         return await loadFamilyFromDatabase();
     } catch (err: any) {
         // Revert so the user isn't left pointing at a bad code
-        await saveDocument(users, userId, { familyCode: deleteField() });
-        throw new Error(`No family found with code "${code}".`);
+        await saveDocument(userDataCollection, "private", { familyCode: deleteField() });
+        throw new Error(`No family found with code "${code}". Error: ${err}`);
     }
 }
 
@@ -140,6 +120,30 @@ export async function isUserInFamily(): Promise<boolean> {
     const userData = await loadDocument(collection(`users/${user.uid}/data`), "private");
 
     return !!userData?.familyCode;
+}
+
+export async function updateFamilyInDatabase(
+    family: Family,
+    name: string,
+    weekStartDay: string
+): Promise<Family> {
+    await saveDocument(collection('families'), family.id, {
+        name: name,
+        weekStartDay: weekStartDay,
+    });
+
+    return {
+        ...family,
+        name: name,
+        weekStartDay: weekStartDay,
+    };
+}
+
+export async function leaveFamilyInDatabase(): Promise<void> {
+    const userId = Auth.getCurrentUser()!.uid;
+    const userDataCollection = collection(`users/${userId}/data`);
+
+    await saveDocument(userDataCollection, "private", { familyCode: deleteField() });
 }
 
 export async function addProductToDatabase(
@@ -158,8 +162,11 @@ export async function addProductToDatabase(
 
     // 2. Process and upload product photo to firebase storage
     let firebaseImageUrl: string | null = null;
-    if (imageUrl)
-        firebaseImageUrl = await uploadImage(imageUrl, family.id);
+    if (imageUrl) {
+        const timestamp = Date.now();
+        const storagePath = `${family.id}/product_image_${timestamp}.jpg`;
+        firebaseImageUrl = await uploadImage(imageUrl, storagePath);
+    }
 
     // 3. Create product's document
     const productsColl = collection(`families/${family.id}/allProducts`);
@@ -257,8 +264,11 @@ export async function updateProductInDatabase(
         }
 
         // 3. Process and upload product photo to firebase storage
-        if (imageUrl)
-            firebaseImageUrl = await uploadImage(imageUrl, family.id);
+        if (imageUrl) {
+            const timestamp = Date.now();
+            const storagePath = `${family.id}/product_image_${timestamp}.jpg`;
+            firebaseImageUrl = await uploadImage(imageUrl, storagePath);
+        }
     }
 
     // 4. Change product's document
@@ -313,7 +323,7 @@ export async function toggleProductInDatabase(
         isChecked: !product.isChecked,
     };
 
-    saveDocument(productsColl, product.id, newProductData); // No await to update ui immediately
+    await saveDocument(productsColl, product.id, newProductData);
 
     const updatedProduct: Product = {
         id: product.id,

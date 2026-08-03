@@ -1,29 +1,28 @@
 import React, {useRef, useState} from "react";
-import {Animated, Dimensions, PanResponder, Pressable, StyleSheet, Text, View,} from "react-native";
-import {SafeAreaView} from "react-native-safe-area-context";
-import {StatusBar} from "expo-status-bar";
+import {Alert, Animated, Dimensions, PanResponder, Pressable, StyleSheet, Text, View,} from "react-native";
 import {LoadingIndicator, TopBar} from "@/lib/components/ui";
 import {BottomNav} from "@/lib/components/BottomNav";
 import {AddProductSheet, DetailsSheet, EditProductSheet} from "@/lib/components/ProductSheets";
-import {FamilyManagementSheet} from "@/lib/components/FamilyManagementSheet";
 import {SettingsScreen} from "@/lib/screens/SettingsScreen";
 import {router} from "expo-router";
 import GroceriesScreen from "@/lib/screens/GroceriesScreen";
 import ChecklistScreen from "@/lib/screens/ChecklistScreen";
 import * as Auth from "@/lib/auth";
-import {getCurrentUser} from "@/lib/auth";
+import {getCurrentUser, readProfile, updateProfile} from "@/lib/auth";
 import {
     addProductToDatabase,
     addProductToThisWeekInDatabase,
     deleteProductInDatabase,
     isUserInFamily,
+    leaveFamilyInDatabase,
     loadFamilyFromDatabase,
     toggleProductInDatabase,
+    updateFamilyInDatabase,
     updateProductInDatabase,
 } from "@/lib/familyService";
 import {log} from "@/lib/util";
 import {useSnackbar} from "@/context/SnackbarContext";
-import {Family, Product} from "@/lib/types";
+import {Family, Product, Profile} from "@/lib/types";
 import {useTheme} from "@/theme/ThemeContext";
 
 const { width } = Dimensions.get("window");
@@ -37,6 +36,7 @@ export default function MainAppPage() {
     const [sheet, setSheet] = useState(null);
     const [selected, setSelected] = useState(null);
     const [family, setFamily] = useState<Family>(null);
+    const [profile, setProfile] = useState<Profile>(null);
 
     const { showSnackbar } = useSnackbar();
 
@@ -112,12 +112,22 @@ export default function MainAppPage() {
         );
     }
 
+    if (!profile) {
+        readProfile().then((profile: Profile) => {
+            setProfile(profile);
+        }).catch((err) => {
+            log("Main App", "failed to load profile: " + err.message, showSnackbar);
+        });
+
+        return (
+            <LoadingIndicator />
+        );
+    }
+
     return (
-        <SafeAreaView edges={["top", "left", "right"]} style={styles.root}>
-            <StatusBar style="dark" />
+        <>
             <TopBar
                 title={"SuperCart"}
-                action={page === 2 ? "Log out" : null}
                 onAction={signOut}
             />
 
@@ -135,9 +145,29 @@ export default function MainAppPage() {
                             products={family.weekProducts}
                             openDetails={openDetails}
                             toggleProduct={(product: Product) => {
-                                toggleProductInDatabase(family, product).then(newFamily => {
-                                    setFamily(newFamily);
-                                }).catch(err => {
+                                const updatedProduct: Product = {
+                                    id: product.id,
+                                    name: product.name,
+                                    description: product.description,
+                                    imageUrl: product.imageUrl,
+                                    addedByUserId: product.addedByUserId,
+                                    addedByName: product.addedByName,
+                                    isRecurring: product.isRecurring,
+                                    isChecked: !product.isChecked,
+                                };
+                                const originalFamily = family;
+                                setFamily({
+                                    ...family,
+                                    allProducts: family.allProducts.map(p =>
+                                        p.id === updatedProduct.id ? updatedProduct : p
+                                    ),
+                                    weekProducts: family.weekProducts.map(p =>
+                                        p.id === updatedProduct.id ? updatedProduct : p
+                                    ),
+                                });
+
+                                toggleProductInDatabase(family, product).catch(err => {
+                                    setFamily(originalFamily);
                                     log("Main App", "Failed to toggle product: " + err.message, showSnackbar);
                                 });
                             }}
@@ -146,8 +176,41 @@ export default function MainAppPage() {
                     <Page>
                         <SettingsScreen
                             family={family}
-                            onManageFamily={() => setSheet("family")}
                             onLogout={signOut}
+                            onSaveFamily={(name: string, weekStartDay: string) => {
+                                updateFamilyInDatabase(family, name, weekStartDay).then(newFamily => {
+                                    setFamily(newFamily);
+                                    log("Settings", "successfully updated family", showSnackbar);
+                                }).catch(err => {
+                                    log("Settings", "failed to update family: " + err.message, showSnackbar);
+                                });
+                            }}
+                            onLeaveFamily={() => {
+                                leaveFamilyInDatabase().then(() => {
+                                    setFamily(null);
+                                    router.replace("/(auth)/family-gate-page");
+                                }).catch(err => {
+                                    log("Settings", "failed to leave family: " + err.message, showSnackbar);
+                                });
+                            }}
+                            profile={profile}
+                            onSaveProfile={(profile: Profile, password: string) => {
+                                Auth.verifyPassword(password).then(result => {
+                                    if (!result) {
+                                        Alert.alert("Wrong password", "Enter the correct current password");
+                                        return;
+                                    }
+
+                                    updateProfile(profile.name, profile.photoUrl).then(() => {
+                                        setProfile({name: profile.name, photoUrl: profile.photoUrl});
+                                        log("Settings", "successfully updated profile", showSnackbar);
+                                    }).catch(err => {
+                                        log("Settings", "failed to update profile: " + err.message, showSnackbar);
+                                    });
+                                }).catch((err) => {
+                                    log("Settings", "failed to verify password: " + err.message, showSnackbar);
+                                });
+                            }}
                         />
                     </Page>
                 </Animated.View>
@@ -213,16 +276,7 @@ export default function MainAppPage() {
                     });
                 }}
             />
-            <FamilyManagementSheet
-                visible={sheet === "family"}
-                family={family}
-                onClose={() => setSheet(null)}
-                onLeave={() => {
-                    setSheet(null);
-                    () => {}
-                }}
-            />
-        </SafeAreaView>
+        </>
     );
 }
 function Page({ children }) {
@@ -257,5 +311,5 @@ const createStyles = (colors) =>
             shadowRadius: 10,
             elevation: 6,
         },
-        fabText: { color: colors.onPrimary, fontSize: 31, fontWeight: "300", lineHeight: 34 },
+        fabText: { color: colors.text, fontSize: 31, fontWeight: "300", lineHeight: 34 },
     });

@@ -7,8 +7,7 @@ export default function GroceriesScreen({products, setSheet, openDetails}) {
     return (
         <View style={{ flexDirection: "column", flex: 1 }}>
             <ListHeader
-                eyebrow="FAMILY LIST"
-                title="Groceries"
+                title="List"
                 text="Your family’s shared weekly list."
             />
             <ProductList

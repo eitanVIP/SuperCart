@@ -58,7 +58,7 @@ export async function loadCollection(
 
 export async function uploadImage(
     localUri: string,
-    familyId: string
+    storagePath: string
 ): Promise<string> {
     const getImageSize = (uri: string): Promise<{ width: number; height: number }> => {
         return new Promise((resolve, reject) => {
@@ -92,9 +92,6 @@ export async function uploadImage(
     const response = await fetch(processedImage.uri);
     const blob = await response.blob();
 
-    // 4. Set storage path: {familyId}/product_image_{local_timestamp}.jpg
-    const timestamp = Date.now();
-    const storagePath = `${familyId}/product_image_${timestamp}.jpg`;
     const storageRef = ref(storage, storagePath);
 
     // 5. Upload file and get public download URL

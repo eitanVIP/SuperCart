@@ -21,6 +21,7 @@ export const lightColors = {
     // Borders / dividers
     border: "#E2ECE6",         // card borders
     borderLight: "#D8E6DD",    // filter pill borders
+    borderOnSheet: "#526B5F",
     divider: "#EDF2EF",
 
     // Checkbox / interactive
@@ -71,6 +72,7 @@ export const darkColors = {
     // Borders / dividers
     border: "#2B3833",
     borderLight: "#26332D",
+    borderOnSheet: "#526B5F",
     divider: "#24302B",
 
     // Checkbox / interactive

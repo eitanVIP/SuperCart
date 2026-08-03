@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import {StyleSheet, Text, TextInput, View} from "react-native";
+import {KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View} from "react-native";
 import {PrimaryButton, TopBar} from "@/lib/components/ui";
 import * as Auth from '@/lib/auth';
 import {router} from "expo-router";
@@ -7,7 +7,6 @@ import {useSnackbar} from "@/context/SnackbarContext";
 import {log} from "@/lib/util";
 import * as Family from "@/lib/familyService";
 import {useTheme} from "@/theme/ThemeContext";
-import {KeyboardAwareScrollView} from "react-native-keyboard-controller";
 
 export default function FamilyGatePage() {
     const { colors } = useTheme();
@@ -91,45 +90,43 @@ export default function FamilyGatePage() {
     return (
         <>
             <TopBar title="SuperCart" action="Log out" onAction={signOut} />
-            <KeyboardAwareScrollView
-                contentContainerStyle={staticStyles.content}
-                keyboardShouldPersistTaps="handled"
-                bottomOffset={120}
-            >
-                <Text style={styles.title}>Choose your family</Text>
-                <Text style={styles.intro}>
-                    You need a shared family space before you can start a list.
-                </Text>
-                <View style={styles.panel}>
-                    <Text style={styles.panelTitle}>Create a new family</Text>
-                    <Text style={styles.panelSub}>Start a new shared shopping list.</Text>
-                    <TextInput
-                        value={name}
-                        onChangeText={setName}
-                        placeholder="Family name"
-                        placeholderTextColor={colors.placeholder}
-                        style={styles.input}
-                    />
-                    <PrimaryButton disabled={loading} label="Create family" onPress={makeFamily} />
-                </View>
-                <Text style={styles.divider}>OR</Text>
-                <View style={styles.panel}>
-                    <Text style={styles.panelTitle}>Join an existing family</Text>
-                    <Text style={styles.panelSub}>
-                        Enter the six-digit code from a family member.
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+                <ScrollView style={staticStyles.content}>
+                    <Text style={styles.title}>Choose your family</Text>
+                    <Text style={styles.intro}>
+                        You need a shared family space before you can start a list.
                     </Text>
-                    <TextInput
-                        value={code}
-                        onChangeText={(text) => setCode(text.toUpperCase())}
-                        placeholder="000000"
-                        placeholderTextColor={colors.placeholder}
-                        autoCapitalize="characters"
-                        maxLength={6}
-                        style={[styles.input, staticStyles.code]}
-                    />
-                    <PrimaryButton disabled={loading} label="Join family" onPress={joinFamily} />
-                </View>
-            </KeyboardAwareScrollView>
+                    <View style={styles.panel}>
+                        <Text style={styles.panelTitle}>Create a new family</Text>
+                        <Text style={styles.panelSub}>Start a new shared shopping list.</Text>
+                        <TextInput
+                            value={name}
+                            onChangeText={setName}
+                            placeholder="Family name"
+                            placeholderTextColor={colors.placeholder}
+                            style={styles.input}
+                        />
+                        <PrimaryButton disabled={loading} label="Create family" onPress={makeFamily} />
+                    </View>
+                    <Text style={styles.divider}>OR</Text>
+                    <View style={styles.panel}>
+                        <Text style={styles.panelTitle}>Join an existing family</Text>
+                        <Text style={styles.panelSub}>
+                            Enter the six-digit code from a family member.
+                        </Text>
+                        <TextInput
+                            value={code}
+                            onChangeText={(text) => setCode(text.toUpperCase())}
+                            placeholder="000000"
+                            placeholderTextColor={colors.placeholder}
+                            autoCapitalize="characters"
+                            maxLength={6}
+                            style={[styles.input, staticStyles.code]}
+                        />
+                        <PrimaryButton disabled={loading} label="Join family" onPress={joinFamily} />
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
         </>
     );
 }

@@ -1,13 +1,12 @@
 import {StyleSheet, Text, View} from "react-native";
 import {useTheme} from "@/theme/ThemeContext";
 
-export default function ListHeader({ eyebrow, title, text }) {
+export default function ListHeader({ title, text }) {
     const { colors } = useTheme();
     const styles = createStyles(colors);
 
     return (
         <View style={staticStyles.header}>
-            <Text style={styles.eyebrow}>{eyebrow}</Text>
             <Text style={styles.title}>{title}</Text>
             <Text style={styles.sub}>{text}</Text>
         </View>

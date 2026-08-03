@@ -1,6 +1,16 @@
 import React from "react";
-import {ActivityIndicator, Pressable, StyleSheet, Text, TextInput, type TextInputProps, View} from "react-native";
+import {
+	ActivityIndicator,
+	Pressable,
+	StyleSheet,
+	Text,
+	TextInput,
+	type TextInputProps,
+	useWindowDimensions,
+	View
+} from "react-native";
 import {useTheme} from "@/theme/ThemeContext";
+import {BottomSheet as ExpoBottomSheet, RNHostView} from '@expo/ui';
 
 export function PrimaryButton({
 								  label,
@@ -76,7 +86,28 @@ export function LoadingIndicator() {
 	);
 }
 
+export function BottomSheet({ children, visible, onClose }) {
+	const { width } = useWindowDimensions();
+
+	return (
+		<ExpoBottomSheet isPresented={visible} onDismiss={onClose} snapPoints={["0%"]}>
+			<RNHostView matchContents>
+				<View style={[staticStyles.sheet, {width}]}>
+					{children}
+				</View>
+			</RNHostView>
+		</ExpoBottomSheet>
+	);
+}
+
 const staticStyles = StyleSheet.create({
+	sheet: {
+		backgroundColor: "transparent",
+		paddingLeft: 24,
+		paddingRight: 24,
+		paddingBottom: 34,
+		gap: 8
+	},
 	disabled: { opacity: 0.45 },
 	brand: { flexDirection: "row", alignItems: "center", gap: 9 },
 	loadingContainer: {
@@ -96,7 +127,7 @@ const createStyles = (colors) =>
 			borderRadius: 14,
 			marginTop: 20,
 		},
-		primaryText: { color: colors.onPrimary, fontSize: 16, fontWeight: "800" },
+		primaryText: { color: colors.text, fontSize: 16, fontWeight: "800" },
 		inputLabel: {
 			fontSize: 10,
 			color: colors.textMuted,
