@@ -60,16 +60,18 @@ export function AddProductSheet({ visible, onCloseSheet, onAdd, allProducts, wee
 
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
+    const [count, setCount] = useState(1);
     const [isRecurring, setRecurring] = useState(false);
     const [imageUrl, setImageUrl] = useState(null);
 
     const historyProducts = allProducts.filter((item: Product) => !weekProducts.some((w: Product) => w.id === item.id));
 
     function onClose() {
-        setImageUrl(null);
-        setRecurring(false);
         setName("");
         setDescription("");
+        setCount(1);
+        setRecurring(false);
+        setImageUrl(null);
         setFromHistory(false);
         onCloseSheet();
     }
@@ -80,7 +82,7 @@ export function AddProductSheet({ visible, onCloseSheet, onAdd, allProducts, wee
             return
         }
 
-        onAdd({ name: name, description: description, imageUrl: imageUrl, isRecurring: isRecurring });
+        onAdd(name, description, count, imageUrl, isRecurring);
 
         onClose();
     }
@@ -110,7 +112,16 @@ export function AddProductSheet({ visible, onCloseSheet, onAdd, allProducts, wee
                 <TextInput
                     value={description}
                     onChangeText={setDescription}
-                    placeholder="Quantity, type, or notes"
+                    placeholder="Notes"
+                    placeholderTextColor={colors.placeholder}
+                    style={styles.input}
+                />
+                <Text style={styles.label}>COUNT</Text>
+                <TextInput
+                    value={count.toString()}
+                    onChangeText={(text) => text === "" ? setCount(0) : setCount(Math.min(parseInt(text.replace(/[^0-9]/g, "")), 99))}
+                    placeholder="1"
+                    keyboardType="numeric"
                     placeholderTextColor={colors.placeholder}
                     style={styles.input}
                 />
@@ -158,6 +169,7 @@ export function EditProductSheet({ item, visible, onCloseSheet, onSave }) {
 
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
+    const [count, setCount] = useState(1);
     const [isRecurring, setRecurring] = useState(false);
     const [imageUrl, setImageUrl] = useState(null);
 
@@ -165,6 +177,7 @@ export function EditProductSheet({ item, visible, onCloseSheet, onSave }) {
         if (visible && item) {
             setName(item.name);
             setDescription(item.description || "");
+            setCount(item.count || 1);
             setRecurring(item.isRecurring);
             setImageUrl(item.imageUrl || null);
         }
@@ -173,26 +186,21 @@ export function EditProductSheet({ item, visible, onCloseSheet, onSave }) {
     if (!item) return null;
 
     function onClose() {
-        setImageUrl(null);
-        setRecurring(false);
         setName("");
         setDescription("");
+        setCount(1);
+        setRecurring(false);
+        setImageUrl(null);
         onCloseSheet();
     }
 
-    async function save() {
+    function save() {
         if (!name) {
             Alert.alert("Item name required", "Please input a name.");
             return;
         }
 
-        await onSave(item, {
-            name: name,
-            description: description,
-            imageUrl,
-            isRecurring,
-        });
-
+        onSave(item, name, description, count, imageUrl, isRecurring);
         onClose();
     }
 
@@ -214,7 +222,16 @@ export function EditProductSheet({ item, visible, onCloseSheet, onSave }) {
             <TextInput
                 value={description}
                 onChangeText={setDescription}
-                placeholder="Quantity, type, or notes"
+                placeholder="Notes"
+                placeholderTextColor={colors.placeholder}
+                style={styles.input}
+            />
+            <Text style={styles.label}>COUNT</Text>
+            <TextInput
+                value={count.toString()}
+                onChangeText={(text) => text === "" ? setCount(0) : setCount(Math.min(parseInt(text.replace(/[^0-9]/g, "")), 99))}
+                placeholder="1"
+                keyboardType="numeric"
                 placeholderTextColor={colors.placeholder}
                 style={styles.input}
             />
@@ -250,7 +267,10 @@ export function DetailsSheet({ item, visible, onClose, onEdit, onDelete, onDelet
     return (
         <BottomSheet visible={visible} onClose={onClose}>
             {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={staticStyles.detailImage} />}
-            <Text style={styles.title}>{item.name}</Text>
+            <View style={{flexDirection: "row", justifyContent: "space-between"}}>
+                <Text style={styles.title}>{item.name}</Text>
+                <Text style={styles.title}>{"×" + item.count}</Text>
+            </View>
             {item.description ? (
                 <Text style={styles.detailText}>{item.description}</Text>
             ) : (
@@ -389,9 +409,10 @@ const createStyles = (colors) =>
         remove: {
             height: 50,
             paddingHorizontal: 20,
-            borderRadius: 13,
+            borderRadius: 17,
             borderWidth: 1,
-            borderColor: colors.dangerLight,
+            borderColor: colors.danger,
+            backgroundColor: colors.dangerLight,
             alignItems: "center",
             justifyContent: "center",
         },

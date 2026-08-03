@@ -150,6 +150,7 @@ export async function addProductToDatabase(
     family: Family,
     name: string,
     description: string,
+    count: number,
     imageUrl: string | null,
     isRecurring: boolean
 ): Promise<Family> {
@@ -174,6 +175,7 @@ export async function addProductToDatabase(
     const newProductData: ProductDatabase = {
         name: name,
         description: description,
+        count: count,
         imageUrl: firebaseImageUrl,
         addedByUserId: userId,
         isRecurring: isRecurring,
@@ -193,6 +195,7 @@ export async function addProductToDatabase(
         id: productId,
         name: name,
         description: description,
+        count: count,
         imageUrl: firebaseImageUrl,
         addedByUserId: userId,
         addedByName: addedByName,
@@ -242,6 +245,7 @@ export async function updateProductInDatabase(
     product: Product,
     name: string,
     description: string,
+    count: number,
     imageUrl: string | null,
     isRecurring: boolean
 ): Promise<Family> {
@@ -277,6 +281,7 @@ export async function updateProductInDatabase(
     const newProductData: ProductDatabase = {
         name: name,
         description: description,
+        count: count,
         imageUrl: firebaseImageUrl,
         addedByUserId: userId,
         isRecurring: isRecurring,
@@ -290,6 +295,7 @@ export async function updateProductInDatabase(
         id: product.id,
         name: name,
         description: description,
+        count: count,
         imageUrl: firebaseImageUrl,
         addedByUserId: userId,
         addedByName: addedByName,
@@ -317,6 +323,7 @@ export async function toggleProductInDatabase(
     const newProductData: ProductDatabase = {
         name: product.name,
         description: product.description,
+        count: product.count,
         imageUrl: product.imageUrl,
         addedByUserId: product.addedByUserId,
         isRecurring: product.isRecurring,
@@ -329,6 +336,7 @@ export async function toggleProductInDatabase(
         id: product.id,
         name: product.name,
         description: product.description,
+        count: product.count,
         imageUrl: product.imageUrl,
         addedByUserId: product.addedByUserId,
         addedByName: product.addedByName,
@@ -366,10 +374,11 @@ async function loadProductsFromDatabase(family: Family): Promise<{ allProducts: 
         const addedByProfile = await readProfile(addedByUserId);
         const addedByName = addedByProfile && addedByProfile.name ? addedByProfile.name : "Unknown";
 
-        const newProduct = {
+        const newProduct: Product = {
             id: docId,
             name: productDatabase.name,
             description: productDatabase.description,
+            count: productDatabase.count,
             imageUrl: productDatabase.imageUrl,
             isRecurring: productDatabase.isRecurring,
             addedByUserId: addedByUserId,
@@ -388,6 +397,7 @@ async function loadProductsFromDatabase(family: Family): Promise<{ allProducts: 
 export async function deleteProductInDatabase(family: Family, product: Product, deleteUltimately: boolean): Promise<Family> {
     // Remove week products' properties
     await saveDocument(collection(`families/${family.id}/allProducts`), product.id, {
+        count: 1,
         isRecurring: false,
         addedByUserId: null,
         isChecked: false
@@ -406,6 +416,7 @@ export async function deleteProductInDatabase(family: Family, product: Product, 
 
     const newProduct: Product = {
         ...product,
+        count: 1,
         isRecurring: false,
         addedByUserId: "",
         isChecked: false

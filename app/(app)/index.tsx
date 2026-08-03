@@ -149,6 +149,7 @@ export default function MainAppPage() {
                                     id: product.id,
                                     name: product.name,
                                     description: product.description,
+                                    count: product.count,
                                     imageUrl: product.imageUrl,
                                     addedByUserId: product.addedByUserId,
                                     addedByName: product.addedByName,
@@ -227,9 +228,10 @@ export default function MainAppPage() {
             <AddProductSheet
                 visible={sheet === "add"}
                 onCloseSheet={() => setSheet(null)}
-                onAdd={(product: { name: string; description: string; imageUrl: string; isRecurring: boolean; }) => {
-                    addProductToDatabase(family, product.name, product.description, product.imageUrl, product.isRecurring).then(newFamily => {
+                onAdd={(name: string, description: string, count: number, imageUrl: string, isRecurring: boolean) => {
+                    addProductToDatabase(family, name, description, count, imageUrl, isRecurring).then(newFamily => {
                         setFamily(newFamily);
+                        log("Main App", "successfully added new product", showSnackbar);
                     }).catch(err => {
                         log("Main App", "failed to add product: " + err.message, showSnackbar);
                     });
@@ -239,6 +241,7 @@ export default function MainAppPage() {
                 onAddFromHistory={(product: Product) => {
                     addProductToThisWeekInDatabase(family, product).then(newFamily => {
                         setFamily(newFamily);
+                        log("Main App", "successfully added product", showSnackbar);
                     }).catch(err => {
                         log("Main App", "failed to add product from history: " + err.message, showSnackbar);
                     });
@@ -252,6 +255,7 @@ export default function MainAppPage() {
                 onDelete={(product: Product) => {
                     deleteProductInDatabase(family, product, false).then(newFamily => {
                         setFamily(newFamily);
+                        log("Main App", "successfully deleted product", showSnackbar);
                     }).catch(err => {
                         log("Main App", "failed to delete product: " + err.message, showSnackbar);
                     });
@@ -259,6 +263,7 @@ export default function MainAppPage() {
                 onDeleteUlt={(product: Product) => {
                     deleteProductInDatabase(family, product, true).then(newFamily => {
                         setFamily(newFamily);
+                        log("Main App", "successfully deleted product forever", showSnackbar);
                     }).catch(err => {
                         log("Main App", "failed to delete product: " + err.message, showSnackbar);
                     });
@@ -268,9 +273,10 @@ export default function MainAppPage() {
                 item={selected}
                 visible={sheet === "edit"}
                 onCloseSheet={() => setSheet(null)}
-                onSave={(product: Product, newData: { name: string; description: string; imageUrl: string; isRecurring: boolean; }) => {
-                    updateProductInDatabase(family, product, newData.name, newData.description, newData.imageUrl, newData.isRecurring).then(newFamily => {
+                onSave={(product: Product, name: string, description: string, count: number, imageUrl: string, isRecurring: boolean) => {
+                    updateProductInDatabase(family, product, name, description, count, imageUrl, isRecurring).then(newFamily => {
                         setFamily(newFamily);
+                        log("Main App", "successfully updated product", showSnackbar);
                     }).catch(err => {
                         log("Main App", "failed to edit product: " + err.message, showSnackbar);
                     });

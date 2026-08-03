@@ -11,6 +11,7 @@ export interface Product {
 	id: string;
 	name: string;
 	description: string;
+	count: number;
 	imageUrl: string | null;
 	addedByUserId: string;
 	addedByName: string;
@@ -21,6 +22,7 @@ export interface Product {
 export interface ProductDatabase {
 	name: string;
 	description: string;
+	count: number;
 	imageUrl: string | null;
 	addedByUserId: string;
 	isRecurring: boolean;

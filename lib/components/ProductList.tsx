@@ -100,16 +100,20 @@ function ProductRow({ item, shopping, onSelect, onToggle, styles }) {
 			)}
 			<View style={staticStyles.itemBody}>
 				<View style={staticStyles.itemTitleRow}>
-					<Text style={[styles.itemName, shopping && item.isChecked && staticStyles.strike]}>
-						{item.name}
-					</Text>
-					{item.isRecurring && <Text style={styles.recurring}>RECURRING</Text>}
+					<View style={staticStyles.nameGroup}>
+						<Text
+							style={[styles.itemName, shopping && item.isChecked && staticStyles.strike]}
+							numberOfLines={1}
+						>
+							{item.name}
+						</Text>
+						{item.isRecurring && <Text style={styles.recurring}>RECURRING</Text>}
+					</View>
+					<Text style={styles.countStyle}>×{item.count}</Text>
 				</View>
-				{Boolean(item.description) && (
-					<Text style={[styles.description, shopping && item.isChecked && staticStyles.strike]}>
-						{item.description}
-					</Text>
-				)}
+				<Text style={[styles.description, shopping && item.isChecked && staticStyles.strike]}>
+					{item.description === "" ? "No description" : item.description}
+				</Text>
 				<Text style={styles.byline}>Added by {item.addedByName}</Text>
 			</View>
 			{!shopping && <Text style={styles.arrow}>›</Text>}
@@ -149,7 +153,18 @@ const staticStyles = StyleSheet.create({
 	listScroll: { flex: 1 },
 	checkedItem: { opacity: 0.52 },
 	itemBody: { flex: 1 },
-	itemTitleRow: { flexDirection: "row", alignItems: "center", gap: 7 },
+	itemTitleRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+	},
+	nameGroup: {
+		flexDirection: "row",
+		alignItems: "center",
+		flex: 1,
+		marginRight: 8,
+		gap: 6,
+	},
 	strike: { textDecorationLine: "line-through" },
 	empty: { paddingTop: 90, alignItems: "center", paddingHorizontal: 34 },
 });
@@ -239,4 +254,10 @@ const createStyles = (colors) =>
 			backgroundColor: colors.primary,
 		},
 		emptyButtonText: { color: colors.onPrimary, fontWeight: "800" },
+		countStyle: {
+			fontSize: 13,
+			fontWeight: "700",
+			color: colors.textMuted,
+			flexShrink: 0,
+		},
 	});
