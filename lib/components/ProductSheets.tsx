@@ -4,6 +4,7 @@ import * as ImagePicker from "expo-image-picker";
 import {BottomSheet, PrimaryButton, PromptModal, TagChip} from "./ui";
 import {useTheme} from "@/theme/ThemeContext";
 import {Product} from "@/lib/types";
+import * as Auth from "@/lib/auth";
 
 function PhotoControl({ uri, onChange, styles }) {
     const [urlPromptVisible, setUrlPromptVisible] = useState(false);
@@ -295,6 +296,17 @@ function RecurringSwitch({ value, onChange, colors, styles }) {
 export function DetailsSheet({ item, visible, onClose, onEdit, onDelete, onDeleteUlt }) {
     const { colors } = useTheme();
     const styles = createStyles(colors);
+    const [addedByPhotoUrl, setAddedByPhotoUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (visible && item) {
+            Auth.readProfile(item.addedByUserId).then((profile) => {
+                setAddedByPhotoUrl(profile?.photoUrl || null);
+            });
+        } else {
+            setAddedByPhotoUrl(null);
+        }
+    }, [visible, item]);
 
     if (!item) return null;
 
@@ -312,7 +324,12 @@ export function DetailsSheet({ item, visible, onClose, onEdit, onDelete, onDelet
             )}
             <View style={styles.metadata}>
                 <Text style={styles.metadataLabel}>ADDED BY</Text>
-                <Text style={styles.metadataValue}>{item.addedByName}</Text>
+                <View style={staticStyles.addedByRow}>
+                    {addedByPhotoUrl && (
+                        <Image source={{ uri: addedByPhotoUrl }} style={staticStyles.addedByPhoto} />
+                    )}
+                    <Text style={styles.metadataValue}>{item.addedByName}</Text>
+                </View>
             </View>
             <View style={staticStyles.actions}>
                 <Pressable style={styles.button} onPress={onEdit}>
@@ -321,28 +338,6 @@ export function DetailsSheet({ item, visible, onClose, onEdit, onDelete, onDelet
                 <Pressable
                     style={styles.remove}
                     onPress={() => {
-                        // Alert.alert("Delete item?", `Remove ${item.name} from this week's list or remove forever?`, [
-                        //     {
-                        //         text: "Cancel",
-                        //         style: "cancel"
-                        //     },
-                        //     {
-                        //         text: "Delete ultimately",
-                        //         style: "destructive",
-                        //         onPress: () => {
-                        //             onDeleteUlt(item);
-                        //             onClose();
-                        //         },
-                        //     },
-                        //     {
-                        //         text: "Delete from this week",
-                        //         style: "destructive",
-                        //         onPress: () => {
-                        //             onDelete(item);
-                        //             onClose();
-                        //         },
-                        //     },
-                        // ]);
                         Alert.alert("Delete item?", `Remove ${item.name} from the list forever?`, [
                             {
                                 text: "Cancel",
@@ -406,6 +401,17 @@ const staticStyles = StyleSheet.create({
         left: 0,
         right: 0,
         marginTop: 4,
+    },
+    addedByRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        marginTop: 4,
+    },
+    addedByPhoto: {
+        width: 22,
+        height: 22,
+        borderRadius: 11,
     },
 });
 
