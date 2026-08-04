@@ -2,9 +2,9 @@ export interface Family {
 	id: string;
 	name: string;
 	weekStartDay: string;
-	shoppingDays: string[];
+	// shoppingDays: string[];
 	allProducts: Product[];
-	weekProducts: Product[];
+	checklistProducts: Product[];
 }
 
 export interface Product {
@@ -17,6 +17,7 @@ export interface Product {
 	addedByName: string;
 	isRecurring: boolean;
 	isChecked: boolean;
+	checkedAt: number | null;
 }
 
 export interface ProductDatabase {
@@ -27,6 +28,7 @@ export interface ProductDatabase {
 	addedByUserId: string;
 	isRecurring: boolean;
 	isChecked: boolean;
+	checkedAt: number | null;
 }
 
 export interface Profile {

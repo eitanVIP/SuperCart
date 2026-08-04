@@ -1,11 +1,12 @@
 import React, {useMemo, useState} from "react";
-import {Pressable, ScrollView, StyleSheet, Text, View} from "react-native";
+import {Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from "react-native";
 import * as Auth from "@/lib/auth";
 import {useTheme} from "@/theme/ThemeContext";
+import {Product} from "@/lib/types";
 
 const members = ["All", "You"];
 
-export function ProductList({ products, shopping = false, onAdd, onSelect, onToggle }) {
+export function ProductList({ products, checklistProducts, refreshing, onRefresh, isChecklist, onAdd, onSelect, onToggle, onToggleChecklist }) {
 	const { colors } = useTheme();
 	const styles = createStyles(colors);
 
@@ -23,6 +24,10 @@ export function ProductList({ products, shopping = false, onAdd, onSelect, onTog
 				.sort((a, b) => Number(a.isRecurring) - Number(b.isRecurring)),
 		[products, member, recurringOnly],
 	);
+
+	function isProductInChecklist(item: Product): boolean {
+		return checklistProducts.some((w: Product) => w.id === item.id);
+	}
 
 	return (
 		<View style={staticStyles.root}>
@@ -48,9 +53,15 @@ export function ProductList({ products, shopping = false, onAdd, onSelect, onTog
 					styles={styles}
 				/>
 			</ScrollView>
-			<ScrollView style={staticStyles.listScroll} contentContainerStyle={staticStyles.list}>
+			<ScrollView
+				style={staticStyles.listScroll}
+				contentContainerStyle={staticStyles.list}
+				refreshControl={
+					<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+				}
+			>
 				{visible.length === 0 ? (
-					<EmptyState shopping={shopping} onAdd={onAdd} styles={styles} />
+					<EmptyState shopping={isChecklist} onAdd={onAdd} styles={styles} />
 				) : (
 					visible.map((item, index) => (
 						<React.Fragment key={item.id}>
@@ -62,9 +73,11 @@ export function ProductList({ products, shopping = false, onAdd, onSelect, onTog
 							)}
 							<ProductRow
 								item={item}
-								shopping={shopping}
+								isInChecklist={isProductInChecklist(item)}
+								shopping={isChecklist}
 								onSelect={() => onSelect(item)}
 								onToggle={() => onToggle(item)}
+								onToggleChecklist={() => onToggleChecklist(item)}
 								styles={styles}
 							/>
 						</React.Fragment>
@@ -74,6 +87,7 @@ export function ProductList({ products, shopping = false, onAdd, onSelect, onTog
 		</View>
 	);
 }
+
 function FilterButton({ label, active, onPress, styles }) {
 	return (
 		<Pressable onPress={onPress} style={[styles.filter, active && styles.filterActive]}>
@@ -83,7 +97,8 @@ function FilterButton({ label, active, onPress, styles }) {
 		</Pressable>
 	);
 }
-function ProductRow({ item, shopping, onSelect, onToggle, styles }) {
+
+function ProductRow({ item, isInChecklist, shopping, onSelect, onToggle, onToggleChecklist, styles }) {
 	return (
 		<Pressable
 			onPress={onSelect}
@@ -116,10 +131,22 @@ function ProductRow({ item, shopping, onSelect, onToggle, styles }) {
 				</Text>
 				<Text style={styles.byline}>Added by {item.addedByName}</Text>
 			</View>
-			{!shopping && <Text style={styles.arrow}>›</Text>}
+			{!shopping && (
+				<View style={staticStyles.rightControls}>
+					<Pressable
+						onPress={onToggleChecklist}
+						hitSlop={10}
+						style={[styles.checklistToggle, isInChecklist && styles.checklistToggleActive]}
+					>
+						<View style={[styles.checklistToggleKnob, isInChecklist && styles.checklistToggleKnobActive]} />
+					</Pressable>
+					<Text style={styles.arrow}>›</Text>
+				</View>
+			)}
 		</Pressable>
 	);
 }
+
 function EmptyState({ shopping, onAdd, styles }) {
 	return (
 		<View style={staticStyles.empty}>
@@ -167,6 +194,11 @@ const staticStyles = StyleSheet.create({
 	},
 	strike: { textDecorationLine: "line-through" },
 	empty: { paddingTop: 90, alignItems: "center", paddingHorizontal: 34 },
+	rightControls: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 14,
+	},
 });
 
 const createStyles = (colors) =>
@@ -259,5 +291,26 @@ const createStyles = (colors) =>
 			fontWeight: "700",
 			color: colors.textMuted,
 			flexShrink: 0,
+		},
+		checklistToggle: {
+			width: 44,
+			height: 26,
+			borderRadius: 13,
+			backgroundColor: colors.borderLight,
+			padding: 3,
+			justifyContent: "center",
+		},
+		checklistToggleActive: {
+			backgroundColor: colors.primary,
+		},
+		checklistToggleKnob: {
+			width: 20,
+			height: 20,
+			borderRadius: 10,
+			backgroundColor: colors.card,
+			alignSelf: "flex-start",
+		},
+		checklistToggleKnobActive: {
+			alignSelf: "flex-end",
 		},
 	});

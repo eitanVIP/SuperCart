@@ -12,6 +12,7 @@ import {Family, Product, ProductDatabase} from "@/lib/types";
 import * as Auth from '@/lib/auth';
 import {readProfile} from '@/lib/auth';
 import {arrayRemove, arrayUnion, deleteField} from 'firebase/firestore';
+import {hasDayPassedSince} from "@/lib/util";
 
 function generateFamilyCode(length = 6): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no O/0/I/1 to avoid confusion
@@ -34,7 +35,7 @@ export async function createFamilyInDatabase(name: string, maxAttempts = 5): Pro
                 name,
                 weekStartDay: "Sunday",
                 shoppingDays: ["Thursday"],
-                weekProducts: []
+                checklistProducts: []
             });
 
             // Family doc created successfully — link the user to it
@@ -44,9 +45,8 @@ export async function createFamilyInDatabase(name: string, maxAttempts = 5): Pro
                 id: code,
                 name: name,
                 weekStartDay: "Sunday",
-                shoppingDays: ["Thursday"],
                 allProducts: [],
-                weekProducts: []
+                checklistProducts: []
             };
         } catch (err: any) {
             if (err.code === 'permission-denied') continue;
@@ -82,15 +82,15 @@ export async function loadFamilyFromDatabase(): Promise<Family> {
         id: code,
         name: familyData.name,
         weekStartDay: familyData.weekStartDay,
-        shoppingDays: familyData.shoppingDays ?? [],
+        // shoppingDays: familyData.shoppingDays ?? [],
         allProducts: null,
-        weekProducts: null,
+        checklistProducts: null,
     };
 
-    const { allProducts, weekProducts } = await loadProductsFromDatabase(family);
+    const { allProducts, checklistProducts } = await loadProductsFromDatabase(family);
 
     family.allProducts = allProducts;
-    family.weekProducts = weekProducts;
+    family.checklistProducts = checklistProducts;
 
     return family;
 }
@@ -180,14 +180,15 @@ export async function addProductToDatabase(
         addedByUserId: userId,
         isRecurring: isRecurring,
         isChecked: false,
+        checkedAt: null,
     };
 
     const productId = await addDocument(productsColl, newProductData);
 
-    // 4. Update weekProducts
+    // 4. Update checklistProducts
     const families = collection('families');
     await saveDocument(families, family.id, {
-        weekProducts: arrayUnion(productId),
+        checklistProducts: arrayUnion(productId),
     });
 
     // 5. Build new product, then return family with it added
@@ -201,42 +202,75 @@ export async function addProductToDatabase(
         addedByName: addedByName,
         isRecurring: isRecurring,
         isChecked: false,
+        checkedAt: null,
     };
 
     return {
         ...family,
         allProducts: [...family.allProducts, newProduct],
-        weekProducts: [...family.weekProducts, newProduct],
+        // weekProducts: [...family.weekProducts, newProduct],
     };
 }
 
-export async function addProductToThisWeekInDatabase(
+// export async function addProductToThisWeekInDatabase(
+//     family: Family,
+//     product: Product,
+// ): Promise<Family> {
+//     const userId = Auth.getCurrentUser()!.uid;
+//
+//     // Update addedByUserId
+//     await saveDocument(collection(`families/${family.id}/allProducts`), product.id, {
+//         addedByUserId: userId,
+//     });
+//
+//     // Add product to this week
+//     await saveDocument(collection('families'), family.id, {
+//         weekProducts: arrayUnion(product.id),
+//     });
+//
+//     const updatedProduct: Product = {
+//         ...product,
+//         addedByUserId: userId,
+//     };
+//
+//     return {
+//         ...family,
+//         allProducts: family.allProducts.map(item =>
+//             item.id === product.id ? updatedProduct : item
+//         ),
+//         weekProducts: [...family.weekProducts, updatedProduct],
+//     };
+// }
+
+export async function setProductToChecklistInDatabase(
     family: Family,
     product: Product,
+    inChecklist: boolean,
 ): Promise<Family> {
-    const userId = Auth.getCurrentUser()!.uid;
+    if (inChecklist) {
+        // Add product to checklist
+        await saveDocument(collection('families'), family.id, {
+            checklistProducts: arrayUnion(product.id),
+        });
+    } else {
+        // Remove product's properties
+        await saveDocument(collection(`families/${family.id}/allProducts`), product.id, {
+            count: 1,
+            isRecurring: false,
+            addedByUserId: null,
+            isChecked: false,
+            checkedAt: null,
+        });
 
-    // Update addedByUserId
-    await saveDocument(collection(`families/${family.id}/allProducts`), product.id, {
-        addedByUserId: userId,
-    });
-
-    // Add product to this week
-    await saveDocument(collection('families'), family.id, {
-        weekProducts: arrayUnion(product.id),
-    });
-
-    const updatedProduct: Product = {
-        ...product,
-        addedByUserId: userId,
-    };
+        // Remove product from checklist
+        await saveDocument(collection('families'), family.id, {
+            checklistProducts: arrayRemove(product.id),
+        });
+    }
 
     return {
         ...family,
-        allProducts: family.allProducts.map(item =>
-            item.id === product.id ? updatedProduct : item
-        ),
-        weekProducts: [...family.weekProducts, updatedProduct],
+        checklistProducts: [...family.checklistProducts, product],
     };
 }
 
@@ -286,6 +320,7 @@ export async function updateProductInDatabase(
         addedByUserId: userId,
         isRecurring: isRecurring,
         isChecked: product.isChecked,
+        checkedAt: product.checkedAt,
     };
 
     await saveDocument(productsColl, product.id, newProductData);
@@ -301,6 +336,7 @@ export async function updateProductInDatabase(
         addedByName: addedByName,
         isRecurring: isRecurring,
         isChecked: product.isChecked,
+        checkedAt: product.checkedAt,
     };
 
     return {
@@ -308,7 +344,7 @@ export async function updateProductInDatabase(
         allProducts: family.allProducts.map(p =>
             p.id === updatedProduct.id ? updatedProduct : p
         ),
-        weekProducts: family.weekProducts.map(p =>
+        checklistProducts: family.checklistProducts.map(p =>
             p.id === updatedProduct.id ? updatedProduct : p
         ),
     };
@@ -320,6 +356,8 @@ export async function toggleProductInDatabase(
 ): Promise<Family> {
     const productsColl = collection(`families/${family.id}/allProducts`);
 
+    const checkedAt: number | null = !product.isChecked ? Date.now() : null;
+
     const newProductData: ProductDatabase = {
         name: product.name,
         description: product.description,
@@ -328,6 +366,7 @@ export async function toggleProductInDatabase(
         addedByUserId: product.addedByUserId,
         isRecurring: product.isRecurring,
         isChecked: !product.isChecked,
+        checkedAt: checkedAt,
     };
 
     await saveDocument(productsColl, product.id, newProductData);
@@ -342,6 +381,7 @@ export async function toggleProductInDatabase(
         addedByName: product.addedByName,
         isRecurring: product.isRecurring,
         isChecked: !product.isChecked,
+        checkedAt: checkedAt,
     };
 
     return {
@@ -349,25 +389,25 @@ export async function toggleProductInDatabase(
         allProducts: family.allProducts.map(p =>
             p.id === updatedProduct.id ? updatedProduct : p
         ),
-        weekProducts: family.weekProducts.map(p =>
+        checklistProducts: family.checklistProducts.map(p =>
             p.id === updatedProduct.id ? updatedProduct : p
         ),
     };
 }
 
-async function loadProductsFromDatabase(family: Family): Promise<{ allProducts: Product[], weekProducts: Product[] }> {
+async function loadProductsFromDatabase(family: Family): Promise<{ allProducts: Product[], checklistProducts: Product[] }> {
     if (!Auth.getCurrentUser())
         throw new Error('User not logged in');
 
     const familyData = await loadDocument(collection('families'), family.id);
-    const weekProductsIds: string[] = familyData.weekProducts;
+    let checklistProductsIds: string[] = familyData.checklistProducts;
 
     const productsColl = collection(`families/${family.id}/allProducts`);
     const productsDocs = await loadCollection(productsColl);
     const productMap = new Map(productsDocs.map(doc => [doc.id, doc.data as ProductDatabase]));
 
     const allProducts: Product[] = [];
-    const weekProducts: Product[] = [];
+    const checklistProducts: Product[] = [];
 
     for (const [docId, productDatabase] of productMap) {
         const addedByUserId = productDatabase.addedByUserId;
@@ -383,29 +423,46 @@ async function loadProductsFromDatabase(family: Family): Promise<{ allProducts: 
             isRecurring: productDatabase.isRecurring,
             addedByUserId: addedByUserId,
             addedByName: addedByName,
-            isChecked: productDatabase.isChecked
+            isChecked: productDatabase.isChecked,
+            checkedAt: productDatabase.checkedAt,
         };
 
+        if (newProduct.isChecked && hasDayPassedSince(newProduct.checkedAt)) {
+            await setProductToChecklistInDatabase(family, newProduct, false);
+
+            newProduct.count = 1;
+            newProduct.isRecurring = false;
+            newProduct.addedByUserId = null;
+            newProduct.isChecked = false;
+            newProduct.checkedAt = null;
+
+            checklistProductsIds = checklistProductsIds.filter(id => id !== newProduct.id);
+        }
+
         allProducts.push(newProduct);
-        if (weekProductsIds.includes(docId))
-            weekProducts.push(newProduct);
+        if (checklistProductsIds.includes(docId))
+            checklistProducts.push(newProduct);
     }
 
-    return { allProducts, weekProducts };
+    return { allProducts, checklistProducts };
 }
 
 export async function deleteProductInDatabase(family: Family, product: Product, deleteUltimately: boolean): Promise<Family> {
-    // Remove week products' properties
-    await saveDocument(collection(`families/${family.id}/allProducts`), product.id, {
-        count: 1,
-        isRecurring: false,
-        addedByUserId: null,
-        isChecked: false
-    });
+    if (!deleteUltimately) {
+        throw new Error('Currently unsupported behavior');
+    }
 
-    // Remove product from this week
+    // // Remove week products' properties
+    // await saveDocument(collection(`families/${family.id}/allProducts`), product.id, {
+    //     count: 1,
+    //     isRecurring: false,
+    //     addedByUserId: null,
+    //     isChecked: false
+    // });
+
+    // Remove product from checklist
     await saveDocument(collection('families'), family.id, {
-        weekProducts: arrayRemove(product.id),
+        checklistProducts: arrayRemove(product.id),
     });
 
     if (deleteUltimately) {
@@ -414,20 +471,20 @@ export async function deleteProductInDatabase(family: Family, product: Product, 
         await deleteDocument(allProductsCol, product.id);
     }
 
-    const newProduct: Product = {
-        ...product,
-        count: 1,
-        isRecurring: false,
-        addedByUserId: "",
-        addedByName: "Unknown",
-        isChecked: false
-    };
+    // const newProduct: Product = {
+    //     ...product,
+    //     count: 1,
+    //     isRecurring: false,
+    //     addedByUserId: "",
+    //     addedByName: "Unknown",
+    //     isChecked: false
+    // };
 
     return {
         ...family,
         allProducts: deleteUltimately
             ? family.allProducts.filter(p => p.id !== product.id)
-            : family.allProducts.map(item => item.id === product.id ? newProduct : item),
-        weekProducts: family.weekProducts.filter(p => p.id !== product.id),
+            : family.allProducts.map(item => item.id === product.id ? /*newProduct*/null : item),
+        checklistProducts: family.checklistProducts.filter(p => p.id !== product.id),
     };
 }

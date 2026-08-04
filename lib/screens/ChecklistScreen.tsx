@@ -3,7 +3,7 @@ import {ProductList} from "../components/ProductList";
 import ListHeader from "../components/ListHeader";
 import {View} from "react-native";
 
-export default function ChecklistScreen({products, openDetails, toggleProduct}) {
+export default function ChecklistScreen({products, checklistProducts, refreshing, onRefresh, openDetails, toggleProduct}) {
     return (
         <View style={{ flexDirection: "column", flex: 1 }}>
             <ListHeader
@@ -12,10 +12,14 @@ export default function ChecklistScreen({products, openDetails, toggleProduct}) 
             />
             <ProductList
                 products={products}
-                shopping
+                checklistProducts={checklistProducts}
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                isChecklist={true}
                 onAdd={() => {}}
                 onSelect={openDetails}
                 onToggle={toggleProduct}
+                onToggleChecklist={() => {}}
             />
         </View>
     );

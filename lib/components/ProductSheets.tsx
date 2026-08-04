@@ -74,7 +74,7 @@ function PhotoControl({ uri, onChange, styles }) {
     );
 }
 
-export function AddProductSheet({ visible, onCloseSheet, onAdd, allProducts, weekProducts, onAddFromHistory }) {
+export function AddProductSheet({ visible, onCloseSheet, onAdd, allProducts, checklistProducts, onAddFromHistory }) {
     const { colors } = useTheme();
     const styles = createStyles(colors);
     const [fromHistory, setFromHistory] = useState(false);
@@ -85,7 +85,7 @@ export function AddProductSheet({ visible, onCloseSheet, onAdd, allProducts, wee
     const [isRecurring, setRecurring] = useState(false);
     const [imageUrl, setImageUrl] = useState(null);
 
-    const historyProducts = allProducts.filter((item: Product) => !weekProducts.some((w: Product) => w.id === item.id));
+    const historyProducts = allProducts.filter((item: Product) => !checklistProducts.some((w: Product) => w.id === item.id));
 
     function onClose() {
         setName("");
@@ -146,11 +146,11 @@ export function AddProductSheet({ visible, onCloseSheet, onAdd, allProducts, wee
                     placeholderTextColor={colors.placeholder}
                     style={styles.input}
                 />
-                <RecurringSwitch value={isRecurring} onChange={setRecurring} colors={colors} styles={styles} />
+                {/*<RecurringSwitch value={isRecurring} onChange={setRecurring} colors={colors} styles={styles} />*/}
                 <PrimaryButton label="Add to list" onPress={add} />
-                <Pressable style={styles.button} onPress={() => {setFromHistory(true)}}>
-                    <Text style={styles.buttonText}>Add from history</Text>
-                </Pressable>
+                {/*<Pressable style={styles.button} onPress={() => {setFromHistory(true)}}>*/}
+                {/*    <Text style={styles.buttonText}>Add from history</Text>*/}
+                {/*</Pressable>*/}
             </>)}
 
             {fromHistory && (<>
@@ -253,7 +253,7 @@ export function EditProductSheet({ item, visible, onCloseSheet, onSave }) {
                 placeholderTextColor={colors.placeholder}
                 style={styles.input}
             />
-            <RecurringSwitch value={isRecurring} onChange={setRecurring} colors={colors} styles={styles} />
+            {/*<RecurringSwitch value={isRecurring} onChange={setRecurring} colors={colors} styles={styles} />*/}
             <PrimaryButton label="Save changes" onPress={save} />
         </BottomSheet>
     );

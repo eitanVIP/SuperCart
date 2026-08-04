@@ -1,4 +1,4 @@
-import React, {useRef, useState} from "react";
+import React, {useCallback, useRef, useState} from "react";
 import {Alert, Animated, Dimensions, PanResponder, Pressable, StyleSheet, Text, View,} from "react-native";
 import {LoadingIndicator, TopBar} from "@/lib/components/ui";
 import {BottomNav} from "@/lib/components/BottomNav";
@@ -11,7 +11,6 @@ import * as Auth from "@/lib/auth";
 import {getCurrentUser, readProfile, updateProfile} from "@/lib/auth";
 import {
     addProductToDatabase,
-    addProductToThisWeekInDatabase,
     deleteProductInDatabase,
     isUserInFamily,
     leaveFamilyInDatabase,
@@ -39,6 +38,19 @@ export default function MainAppPage() {
     const [profile, setProfile] = useState<Profile>(null);
 
     const { showSnackbar } = useSnackbar();
+
+    const [refreshing, setRefreshing] = useState(false);
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        try {
+            const newFamily = await loadFamilyFromDatabase();
+            setFamily(newFamily);
+        } catch (err) {
+            log("Main App", "failed to refresh: " + err.message, showSnackbar);
+        } finally {
+            setRefreshing(false);
+        }
+    }, []);
 
     function signOut() {
         Auth.signOut();
@@ -135,16 +147,24 @@ export default function MainAppPage() {
                 <Animated.View style={[staticStyles.pages, { transform: [{ translateX }] }]}>
                     <Page>
                         <GroceriesScreen
-                            products={family.weekProducts}
+                            products={family.allProducts}
+                            checklistProducts={family.checklistProducts}
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
                             setSheet={setSheet}
                             openDetails={openDetails}
+                            toggleChecklist={() => {}}
                         />
                     </Page>
                     <Page>
                         <ChecklistScreen
-                            products={family.weekProducts}
+                            products={family.checklistProducts}
+                            checklistProducts={family.checklistProducts}
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
                             openDetails={openDetails}
                             toggleProduct={(product: Product) => {
+                                const checkedAt: number | null = !product.isChecked ? Date.now() : null;
                                 const updatedProduct: Product = {
                                     id: product.id,
                                     name: product.name,
@@ -155,14 +175,16 @@ export default function MainAppPage() {
                                     addedByName: product.addedByName,
                                     isRecurring: product.isRecurring,
                                     isChecked: !product.isChecked,
+                                    checkedAt: checkedAt,
                                 };
                                 const originalFamily = family;
+
                                 setFamily({
                                     ...family,
                                     allProducts: family.allProducts.map(p =>
                                         p.id === updatedProduct.id ? updatedProduct : p
                                     ),
-                                    weekProducts: family.weekProducts.map(p =>
+                                    checklistProducts: family.checklistProducts.map(p =>
                                         p.id === updatedProduct.id ? updatedProduct : p
                                     ),
                                 });
@@ -237,14 +259,14 @@ export default function MainAppPage() {
                     });
                 }}
                 allProducts={family.allProducts}
-                weekProducts={family.weekProducts}
+                checklistProducts={family.checklistProducts}
                 onAddFromHistory={(product: Product) => {
-                    addProductToThisWeekInDatabase(family, product).then(newFamily => {
-                        setFamily(newFamily);
-                        log("Main App", "successfully added product", showSnackbar);
-                    }).catch(err => {
-                        log("Main App", "failed to add product from history: " + err.message, showSnackbar);
-                    });
+                    // addProductToThisWeekInDatabase(family, product).then(newFamily => {
+                    //     setFamily(newFamily);
+                    //     log("Main App", "successfully added product", showSnackbar);
+                    // }).catch(err => {
+                    //     log("Main App", "failed to add product from history: " + err.message, showSnackbar);
+                    // });
                 }}
             />
             <DetailsSheet

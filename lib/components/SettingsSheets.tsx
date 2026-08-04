@@ -200,28 +200,28 @@ export function FamilySheet({ visible, family, onCloseSheet, onSave, onLeave }) 
                 <Text style={styles.codeHint}>Share this code so others can join.</Text>
             </View>
 
-            <Text style={styles.fieldLabel}>WEEK STARTS ON</Text>
-            <View style={styles.dayRow}>
-                {DAYS.map((day) => (
-                    <Pressable
-                        key={day.value}
-                        onPress={() => setWeekStartDay(day.value)}
-                        style={[
-                            styles.dayOption,
-                            weekStartDay === day.value && styles.dayOptionActive,
-                        ]}
-                    >
-                        <Text
-                            style={[
-                                styles.dayText,
-                                weekStartDay === day.value && styles.dayTextActive,
-                            ]}
-                        >
-                            {day.label}
-                        </Text>
-                    </Pressable>
-                ))}
-            </View>
+            {/*<Text style={styles.fieldLabel}>WEEK STARTS ON</Text>*/}
+            {/*<View style={styles.dayRow}>*/}
+            {/*    {DAYS.map((day) => (*/}
+            {/*        <Pressable*/}
+            {/*            key={day.value}*/}
+            {/*            onPress={() => setWeekStartDay(day.value)}*/}
+            {/*            style={[*/}
+            {/*                styles.dayOption,*/}
+            {/*                weekStartDay === day.value && styles.dayOptionActive,*/}
+            {/*            ]}*/}
+            {/*        >*/}
+            {/*            <Text*/}
+            {/*                style={[*/}
+            {/*                    styles.dayText,*/}
+            {/*                    weekStartDay === day.value && styles.dayTextActive,*/}
+            {/*                ]}*/}
+            {/*            >*/}
+            {/*                {day.label}*/}
+            {/*            </Text>*/}
+            {/*        </Pressable>*/}
+            {/*    ))}*/}
+            {/*</View>*/}
 
             <View style={{ height: 24 }} />
 
