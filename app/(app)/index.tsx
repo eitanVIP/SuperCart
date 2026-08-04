@@ -11,7 +11,9 @@ import * as Auth from "@/lib/auth";
 import {getCurrentUser, readProfile, updateProfile} from "@/lib/auth";
 import {
     addProductToDatabase,
+    createTagInDatabase,
     deleteProductInDatabase,
+    deleteTagInDatabase,
     isUserInFamily,
     leaveFamilyInDatabase,
     loadFamilyFromDatabase,
@@ -134,6 +136,23 @@ export default function MainAppPage() {
                         checklistProducts={family.checklistProducts}
                         refreshing={refreshing}
                         onRefresh={onRefresh}
+                        tags={family.tags}
+                        onCreateTag={(tag: string) => {
+                            createTagInDatabase(family, tag).then(newFamily => {
+                                setFamily(newFamily);
+                                log("Main App", "successfully created tag", showSnackbar);
+                            }).catch(err => {
+                                log("Main App", "failed to create tag: " + err.message, showSnackbar);
+                            });
+                        }}
+                        onDeleteTag={(tag: string) => {
+                            deleteTagInDatabase(family, tag).then(newFamily => {
+                                setFamily(newFamily);
+                                log("Main App", "successfully deleted tag", showSnackbar);
+                            }).catch(err => {
+                                log("Main App", "failed to delete tag: " + err.message, showSnackbar);
+                            });
+                        }}
                         setSheet={setSheet}
                         openDetails={openDetails}
                         toggleChecklist={(product: Product) => {
@@ -175,18 +194,28 @@ export default function MainAppPage() {
                         checklistProducts={family.checklistProducts}
                         refreshing={refreshing}
                         onRefresh={onRefresh}
+                        tags={family.tags}
+                        onCreateTag={(tag: string) => {
+                            createTagInDatabase(family, tag).then(newFamily => {
+                                setFamily(newFamily);
+                                log("Main App", "successfully created tag", showSnackbar);
+                            }).catch(err => {
+                                log("Main App", "failed to create tag: " + err.message, showSnackbar);
+                            });
+                        }}
+                        onDeleteTag={(tag: string) => {
+                            deleteTagInDatabase(family, tag).then(newFamily => {
+                                setFamily(newFamily);
+                                log("Main App", "successfully deleted tag", showSnackbar);
+                            }).catch(err => {
+                                log("Main App", "failed to delete tag: " + err.message, showSnackbar);
+                            });
+                        }}
                         openDetails={openDetails}
                         toggleProduct={(product: Product) => {
                             const checkedAt: number | null = !product.isChecked ? Date.now() : null;
                             const updatedProduct: Product = {
-                                id: product.id,
-                                name: product.name,
-                                description: product.description,
-                                count: product.count,
-                                imageUrl: product.imageUrl,
-                                addedByUserId: product.addedByUserId,
-                                addedByName: product.addedByName,
-                                isRecurring: product.isRecurring,
+                                ...product,
                                 isChecked: !product.isChecked,
                                 checkedAt: checkedAt,
                             };
@@ -262,8 +291,8 @@ export default function MainAppPage() {
             <AddProductSheet
                 visible={sheet === "add"}
                 onCloseSheet={() => setSheet(null)}
-                onAdd={(name: string, description: string, count: number, imageUrl: string, isRecurring: boolean) => {
-                    addProductToDatabase(family, name, description, count, imageUrl, isRecurring).then(newFamily => {
+                onAdd={(name: string, description: string, count: number, imageUrl: string, isRecurring: boolean, tag: string) => {
+                    addProductToDatabase(family, name, description, count, imageUrl, isRecurring, tag).then(newFamily => {
                         setFamily(newFamily);
                         log("Main App", "successfully added new product", showSnackbar);
                     }).catch(err => {
@@ -280,6 +309,7 @@ export default function MainAppPage() {
                     //     log("Main App", "failed to add product from history: " + err.message, showSnackbar);
                     // });
                 }}
+                tags={family.tags}
             />
             <DetailsSheet
                 item={selected}
@@ -307,18 +337,20 @@ export default function MainAppPage() {
                 item={selected}
                 visible={sheet === "edit"}
                 onCloseSheet={() => setSheet(null)}
-                onSave={(product: Product, name: string, description: string, count: number, imageUrl: string, isRecurring: boolean) => {
-                    updateProductInDatabase(family, product, name, description, count, imageUrl, isRecurring).then(newFamily => {
+                onSave={(product: Product, name: string, description: string, count: number, imageUrl: string, isRecurring: boolean, tag: string) => {
+                    updateProductInDatabase(family, product, name, description, count, imageUrl, isRecurring, tag).then(newFamily => {
                         setFamily(newFamily);
                         log("Main App", "successfully updated product", showSnackbar);
                     }).catch(err => {
                         log("Main App", "failed to edit product: " + err.message, showSnackbar);
                     });
                 }}
+                tags={family.tags}
             />
         </>
     );
 }
+
 function Page({ children, active }: { children: React.ReactNode; active: boolean }) {
     return (
         <View

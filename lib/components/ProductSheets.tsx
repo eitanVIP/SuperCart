@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
-import {Alert, Image, Pressable, StyleSheet, Switch, Text, TextInput, View} from "react-native";
+import {Alert, Image, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View} from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import {BottomSheet, PrimaryButton, PromptModal} from "./ui";
+import {BottomSheet, PrimaryButton, PromptModal, TagChip} from "./ui";
 import {useTheme} from "@/theme/ThemeContext";
 import {Product} from "@/lib/types";
 
@@ -74,37 +74,125 @@ function PhotoControl({ uri, onChange, styles }) {
     );
 }
 
-export function AddProductSheet({ visible, onCloseSheet, onAdd, allProducts, checklistProducts, onAddFromHistory }) {
+function useProductForm(initial: Product = {name: "", description: "", tag: "", count: 1, isChecked: false, checkedAt: null, addedByName: "", addedByUserId: "", isRecurring: false, id: "", imageUrl: null}) {
+    const [name, setName] = useState(initial.name ?? "");
+    const [description, setDescription] = useState(initial.description ?? "");
+    const [tag, setTag] = useState(initial.tag ?? "");
+    const [count, setCount] = useState(initial.count ?? 1);
+    const [isRecurring, setRecurring] = useState(initial.isRecurring ?? false);
+    const [imageUrl, setImageUrl] = useState(initial.imageUrl ?? null);
+
+    function reset() {
+        setName("");
+        setDescription("");
+        setTag("");
+        setCount(1);
+        setRecurring(false);
+        setImageUrl(null);
+    }
+
+    function loadFrom(item) {
+        setName(item.name);
+        setDescription(item.description || "");
+        setTag(item.tag || "");
+        setCount(item.count || 1);
+        setRecurring(item.isRecurring);
+        setImageUrl(item.imageUrl || null);
+    }
+
+    return {
+        name, setName,
+        description, setDescription,
+        tag, setTag,
+        count, setCount,
+        isRecurring, setRecurring,
+        imageUrl, setImageUrl,
+        reset,
+        loadFrom,
+    };
+}
+
+function ProductFormFields({ form, tags, colors, styles }) {
+    return (
+        <>
+            <PhotoControl uri={form.imageUrl} onChange={form.setImageUrl} styles={styles} />
+            <Text style={styles.label}>ITEM NAME</Text>
+            <TextInput
+                value={form.name}
+                onChangeText={form.setName}
+                placeholder="What do you need?"
+                placeholderTextColor={colors.placeholder}
+                style={styles.input}
+            />
+            <Text style={styles.label}>
+                DESCRIPTION <Text style={styles.optional}>OPTIONAL</Text>
+            </Text>
+            <TextInput
+                value={form.description}
+                onChangeText={form.setDescription}
+                placeholder="Notes"
+                placeholderTextColor={colors.placeholder}
+                style={styles.input}
+            />
+            {tags && (<>
+                <Text style={styles.label}>TAG</Text>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={staticStyles.tagRow}
+                >
+                    <TagChip
+                        label="No tag"
+                        active={form.tag === ""}
+                        onPress={() => form.setTag("")}
+                        colors={colors}
+                    />
+                    {tags.map((t) => (
+                        <TagChip
+                            key={t}
+                            label={t}
+                            active={form.tag === t}
+                            onPress={() => form.setTag(t)}
+                            colors={colors}
+                        />
+                    ))}
+                </ScrollView>
+            </>)}
+            <Text style={styles.label}>COUNT</Text>
+            <TextInput
+                value={form.count.toString()}
+                onChangeText={(text) => text === "" ? form.setCount(0) : form.setCount(Math.min(parseInt(text.replace(/[^0-9]/g, "")), 99))}
+                placeholder="1"
+                keyboardType="numeric"
+                placeholderTextColor={colors.placeholder}
+                style={styles.input}
+            />
+            {/*<RecurringSwitch value={form.isRecurring} onChange={form.setRecurring} colors={colors} styles={styles} />*/}
+        </>
+    );
+}
+
+export function AddProductSheet({ visible, onCloseSheet, onAdd, allProducts, checklistProducts, onAddFromHistory, tags }) {
     const { colors } = useTheme();
     const styles = createStyles(colors);
     const [fromHistory, setFromHistory] = useState(false);
-
-    const [name, setName] = useState("");
-    const [description, setDescription] = useState("");
-    const [count, setCount] = useState(1);
-    const [isRecurring, setRecurring] = useState(false);
-    const [imageUrl, setImageUrl] = useState(null);
+    const form = useProductForm();
 
     const historyProducts = allProducts.filter((item: Product) => !checklistProducts.some((w: Product) => w.id === item.id));
 
     function onClose() {
-        setName("");
-        setDescription("");
-        setCount(1);
-        setRecurring(false);
-        setImageUrl(null);
+        form.reset();
         setFromHistory(false);
         onCloseSheet();
     }
 
     function add() {
-        if (!name) {
+        if (!form.name) {
             Alert.alert("Item name required", "Please input a name.");
-            return
+            return;
         }
 
-        onAdd(name, description, count, imageUrl, isRecurring);
-
+        onAdd(form.name, form.description, form.count, form.imageUrl, form.isRecurring, form.tag);
         onClose();
     }
 
@@ -118,39 +206,8 @@ export function AddProductSheet({ visible, onCloseSheet, onAdd, allProducts, che
             {!fromHistory && (<>
                 <Text style={styles.title}>Add an item</Text>
                 <Text style={styles.sub}>It will be shared with your family.</Text>
-                <PhotoControl uri={imageUrl} onChange={setImageUrl} styles={styles} />
-                <Text style={styles.label}>ITEM NAME</Text>
-                <TextInput
-                    value={name}
-                    onChangeText={setName}
-                    placeholder="What do you need?"
-                    placeholderTextColor={colors.placeholder}
-                    style={styles.input}
-                />
-                <Text style={styles.label}>
-                    DESCRIPTION <Text style={styles.optional}>OPTIONAL</Text>
-                </Text>
-                <TextInput
-                    value={description}
-                    onChangeText={setDescription}
-                    placeholder="Notes"
-                    placeholderTextColor={colors.placeholder}
-                    style={styles.input}
-                />
-                <Text style={styles.label}>COUNT</Text>
-                <TextInput
-                    value={count.toString()}
-                    onChangeText={(text) => text === "" ? setCount(0) : setCount(Math.min(parseInt(text.replace(/[^0-9]/g, "")), 99))}
-                    placeholder="1"
-                    keyboardType="numeric"
-                    placeholderTextColor={colors.placeholder}
-                    style={styles.input}
-                />
-                {/*<RecurringSwitch value={isRecurring} onChange={setRecurring} colors={colors} styles={styles} />*/}
+                <ProductFormFields form={form} tags={tags} colors={colors} styles={styles} />
                 <PrimaryButton label="Add to list" onPress={add} />
-                {/*<Pressable style={styles.button} onPress={() => {setFromHistory(true)}}>*/}
-                {/*    <Text style={styles.buttonText}>Add from history</Text>*/}
-                {/*</Pressable>*/}
             </>)}
 
             {fromHistory && (<>
@@ -181,79 +238,38 @@ export function AddProductSheet({ visible, onCloseSheet, onAdd, allProducts, che
     );
 }
 
-export function EditProductSheet({ item, visible, onCloseSheet, onSave }) {
+export function EditProductSheet({ item, visible, onCloseSheet, onSave, tags }) {
     const { colors } = useTheme();
     const styles = createStyles(colors);
-
-    const [name, setName] = useState("");
-    const [description, setDescription] = useState("");
-    const [count, setCount] = useState(1);
-    const [isRecurring, setRecurring] = useState(false);
-    const [imageUrl, setImageUrl] = useState(null);
+    const form = useProductForm();
 
     useEffect(() => {
         if (visible && item) {
-            setName(item.name);
-            setDescription(item.description || "");
-            setCount(item.count || 1);
-            setRecurring(item.isRecurring);
-            setImageUrl(item.imageUrl || null);
+            form.loadFrom(item);
         }
     }, [visible, item]);
 
     if (!item) return null;
 
     function onClose() {
-        setName("");
-        setDescription("");
-        setCount(1);
-        setRecurring(false);
-        setImageUrl(null);
+        form.reset();
         onCloseSheet();
     }
 
     function save() {
-        if (!name) {
+        if (!form.name) {
             Alert.alert("Item name required", "Please input a name.");
             return;
         }
 
-        onSave(item, name, description, count, imageUrl, isRecurring);
+        onSave(item, form.name, form.description, form.count, form.imageUrl, form.isRecurring, form.tag);
         onClose();
     }
 
     return (
         <BottomSheet visible={visible} onClose={onClose}>
             <Text style={styles.title}>Edit item</Text>
-            <PhotoControl uri={imageUrl} onChange={setImageUrl} styles={styles} />
-            <Text style={styles.label}>ITEM NAME</Text>
-            <TextInput
-                value={name}
-                onChangeText={setName}
-                placeholder="Item name"
-                placeholderTextColor={colors.placeholder}
-                style={styles.input}
-            />
-            <Text style={styles.label}>
-                DESCRIPTION <Text style={styles.optional}>OPTIONAL</Text>
-            </Text>
-            <TextInput
-                value={description}
-                onChangeText={setDescription}
-                placeholder="Notes"
-                placeholderTextColor={colors.placeholder}
-                style={styles.input}
-            />
-            <Text style={styles.label}>COUNT</Text>
-            <TextInput
-                value={count.toString()}
-                onChangeText={(text) => text === "" ? setCount(0) : setCount(Math.min(parseInt(text.replace(/[^0-9]/g, "")), 99))}
-                placeholder="1"
-                keyboardType="numeric"
-                placeholderTextColor={colors.placeholder}
-                style={styles.input}
-            />
-            {/*<RecurringSwitch value={isRecurring} onChange={setRecurring} colors={colors} styles={styles} />*/}
+            <ProductFormFields form={form} tags={tags} colors={colors} styles={styles} />
             <PrimaryButton label="Save changes" onPress={save} />
         </BottomSheet>
     );
@@ -374,6 +390,23 @@ const staticStyles = StyleSheet.create({
     strike: { textDecorationLine: "line-through" },
     itemTitleRow: { flexDirection: "row", alignItems: "center", gap: 7 },
     urlRow: { flexDirection: "row", gap: 8, marginTop: 10, alignItems: "center" },
+    tagRow: { gap: 9, paddingBottom: 4 },
+    dropdownRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+    },
+    dropdownWrap: {
+        position: "relative",
+        zIndex: 10,
+    },
+    dropdownFloating: {
+        position: "absolute",
+        top: "100%",
+        left: 0,
+        right: 0,
+        marginTop: 4,
+    },
 });
 
 const createStyles = (colors) =>
@@ -474,5 +507,23 @@ const createStyles = (colors) =>
             paddingHorizontal: 12,
             color: colors.text,
             fontSize: 14,
+        },
+        dropdownValue: { fontSize: 15, color: colors.text },
+        placeholder: { fontSize: 15, color: colors.placeholder },
+        dropdownChevron: { fontSize: 11, color: colors.iconMuted },
+        dropdownOption: {
+            paddingVertical: 12,
+            paddingHorizontal: 14,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.borderLight,
+        },
+        dropdownOptionText: { fontSize: 14, color: colors.text },
+        dropdownOptionTextActive: { color: colors.primary, fontWeight: "700" },
+        dropdownMenu: {
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: 12,
+            backgroundColor: colors.card,
+            overflow: "hidden",
         },
     });

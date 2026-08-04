@@ -182,6 +182,34 @@ export function PromptModal({
     );
 }
 
+export function TagChip({ label, active, onPress, colors }) {
+    return (
+        <Pressable
+            onPress={onPress}
+            style={{
+                height: 37,
+                paddingHorizontal: 15,
+                borderRadius: 20,
+                borderWidth: 1,
+                justifyContent: "center",
+                borderColor: active ? colors.border : colors.borderOnSheet,
+                backgroundColor: active ? colors.primaryLighter : colors.card,
+            }}
+        >
+            <Text
+                numberOfLines={1}
+                style={{
+                    fontSize: 13,
+                    fontWeight: "700",
+                    color: active ? colors.primaryDark : colors.textSecondary,
+                }}
+            >
+                {label}
+            </Text>
+        </Pressable>
+    );
+}
+
 const staticStyles = StyleSheet.create({
     sheet: {
         backgroundColor: "transparent",

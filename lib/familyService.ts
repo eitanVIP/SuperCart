@@ -46,7 +46,8 @@ export async function createFamilyInDatabase(name: string, maxAttempts = 5): Pro
                 name: name,
                 weekStartDay: "Sunday",
                 allProducts: [],
-                checklistProducts: []
+                checklistProducts: [],
+                tags: [],
             };
         } catch (err: any) {
             if (err.code === 'permission-denied') continue;
@@ -85,6 +86,7 @@ export async function loadFamilyFromDatabase(): Promise<Family> {
         // shoppingDays: familyData.shoppingDays ?? [],
         allProducts: null,
         checklistProducts: null,
+        tags: familyData.tags ?? [],
     };
 
     const { allProducts, checklistProducts } = await loadProductsFromDatabase(family);
@@ -152,7 +154,8 @@ export async function addProductToDatabase(
     description: string,
     count: number,
     imageUrl: string | null,
-    isRecurring: boolean
+    isRecurring: boolean,
+    tag: string
 ): Promise<Family> {
     const user = Auth.getCurrentUser()!;
     const userId = user.uid;
@@ -181,6 +184,7 @@ export async function addProductToDatabase(
         isRecurring: isRecurring,
         isChecked: false,
         checkedAt: null,
+        tag: tag
     };
 
     const productId = await addDocument(productsColl, newProductData);
@@ -203,6 +207,7 @@ export async function addProductToDatabase(
         isRecurring: isRecurring,
         isChecked: false,
         checkedAt: null,
+        tag: tag
     };
 
     return {
@@ -297,7 +302,8 @@ export async function updateProductInDatabase(
     description: string,
     count: number,
     imageUrl: string | null,
-    isRecurring: boolean
+    isRecurring: boolean,
+    tag: string,
 ): Promise<Family> {
     const user = Auth.getCurrentUser()!;
     const userId = user.uid;
@@ -308,7 +314,7 @@ export async function updateProductInDatabase(
 
     let firebaseImageUrl: string | null = imageUrl;
     // Only remove and reupload image if given imageUrl is from phone and not from database (if image is from database the user didn't change the image)
-    if (!imageUrl.startsWith("http")) {
+    if (imageUrl && !imageUrl.startsWith("http")) {
         // 2. Remove current product photo
         try {
             await removeImage(product.imageUrl);
@@ -318,11 +324,9 @@ export async function updateProductInDatabase(
         }
 
         // 3. Process and upload product photo to firebase storage
-        if (imageUrl) {
-            const timestamp = Date.now();
-            const storagePath = `${family.id}/product_image_${timestamp}.jpg`;
-            firebaseImageUrl = await uploadImage(imageUrl, storagePath);
-        }
+        const timestamp = Date.now();
+        const storagePath = `${family.id}/product_image_${timestamp}.jpg`;
+        firebaseImageUrl = await uploadImage(imageUrl, storagePath);
     }
 
     // 4. Change product's document
@@ -337,6 +341,7 @@ export async function updateProductInDatabase(
         isRecurring: isRecurring,
         isChecked: product.isChecked,
         checkedAt: product.checkedAt,
+        tag: tag
     };
 
     await saveDocument(productsColl, product.id, newProductData);
@@ -353,6 +358,7 @@ export async function updateProductInDatabase(
         isRecurring: isRecurring,
         isChecked: product.isChecked,
         checkedAt: product.checkedAt,
+        tag: tag,
     };
 
     return {
@@ -383,6 +389,7 @@ export async function toggleProductInDatabase(
         isRecurring: product.isRecurring,
         isChecked: !product.isChecked,
         checkedAt: checkedAt,
+        tag: product.tag,
     };
 
     await saveDocument(productsColl, product.id, newProductData);
@@ -398,6 +405,7 @@ export async function toggleProductInDatabase(
         isRecurring: product.isRecurring,
         isChecked: !product.isChecked,
         checkedAt: checkedAt,
+        tag: product.tag,
     };
 
     return {
@@ -417,6 +425,7 @@ async function loadProductsFromDatabase(family: Family): Promise<{ allProducts: 
 
     const familyData = await loadDocument(collection('families'), family.id);
     let checklistProductsIds: string[] = familyData.checklistProducts;
+    const validTags: string[] = familyData.tags ?? [];
 
     const productsColl = collection(`families/${family.id}/allProducts`);
     const productsDocs = await loadCollection(productsColl);
@@ -430,6 +439,12 @@ async function loadProductsFromDatabase(family: Family): Promise<{ allProducts: 
         const addedByProfile = await readProfile(addedByUserId);
         const addedByName = addedByProfile && addedByProfile.name ? addedByProfile.name : "Unknown";
 
+        let tag = productDatabase.tag;
+        if (tag && !validTags.includes(tag)) {
+            await saveDocument(productsColl, docId, { tag: "" });
+            tag = "";
+        }
+
         const newProduct: Product = {
             id: docId,
             name: productDatabase.name,
@@ -441,6 +456,7 @@ async function loadProductsFromDatabase(family: Family): Promise<{ allProducts: 
             addedByName: addedByName,
             isChecked: productDatabase.isChecked,
             checkedAt: productDatabase.checkedAt,
+            tag: tag,
         };
 
         if (newProduct.isChecked && hasDayPassedSince(newProduct.checkedAt)) {
@@ -501,3 +517,59 @@ export async function deleteProductInDatabase(family: Family, product: Product, 
         checklistProducts: family.checklistProducts.filter(p => p.id !== product.id),
     };
 }
+
+export async function createTagInDatabase(family: Family, tag: string): Promise<Family> {
+    if (family.tags?.includes(tag)) {
+        return family;
+    }
+
+    await saveDocument(collection('families'), family.id, {
+        tags: arrayUnion(tag),
+    });
+
+    return {
+        ...family,
+        tags: [...(family.tags ?? []), tag],
+    };
+}
+
+export async function deleteTagInDatabase(family: Family, tag: string): Promise<Family> {
+    // 1. Remove the tag from the family's tag list
+    await saveDocument(collection('families'), family.id, {
+        tags: arrayRemove(tag),
+    });
+
+    // 2. Strip the tag from every product that has it, so nothing is left
+    //    pointing at a tag that no longer exists
+    const productsColl = collection(`families/${family.id}/allProducts`);
+    const affectedProducts = family.allProducts.filter((p) => p.tag === tag);
+
+    for (const product of affectedProducts) {
+        await saveDocument(productsColl, product.id, { tag: "" });
+    }
+
+    // 3. Return updated family state
+    return {
+        ...family,
+        tags: family.tags.filter((t) => t !== tag),
+        allProducts: family.allProducts.map((p) =>
+            p.tag === tag ? { ...p, tag: "" } : p
+        ),
+        checklistProducts: family.checklistProducts.map((p) =>
+            p.tag === tag ? { ...p, tag: "" } : p
+        ),
+    };
+}
+
+// export async function deleteTagInDatabase_noProductUpdate(family: Family, tag: string): Promise<Family> {
+//     // Only removes the tag from the family's tag list — deliberately skips
+//     // stripping it from products, to test what happens with orphaned tag references
+//     await saveDocument(collection('families'), family.id, {
+//         tags: arrayRemove(tag),
+//     });
+//
+//     return {
+//         ...family,
+//         tags: family.tags.filter((t) => t !== tag),
+//     };
+// }

@@ -5,6 +5,7 @@ export interface Family {
 	// shoppingDays: string[];
 	allProducts: Product[];
 	checklistProducts: Product[];
+	tags: string[];
 }
 
 export interface Product {
@@ -18,6 +19,7 @@ export interface Product {
 	isRecurring: boolean;
 	isChecked: boolean;
 	checkedAt: number | null;
+	tag: string;
 }
 
 export interface ProductDatabase {
@@ -29,6 +31,7 @@ export interface ProductDatabase {
 	isRecurring: boolean;
 	isChecked: boolean;
 	checkedAt: number | null;
+	tag: string;
 }
 
 export interface Profile {

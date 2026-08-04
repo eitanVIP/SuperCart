@@ -1,32 +1,90 @@
 import React, {useMemo, useState} from "react";
-import {Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from "react-native";
-import * as Auth from "@/lib/auth";
+import {Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from "react-native";
 import {useTheme} from "@/theme/ThemeContext";
-import {Product} from "@/lib/types";
+import {PromptModal} from "@/lib/components/ui";
 
-const members = ["All", "You"];
-
-export function ProductList({ products, checklistProducts, refreshing, onRefresh, isChecklist, onAdd, onSelect, onToggle, onToggleChecklist }) {
+export function ProductList({
+								products,
+								checklistProducts,
+								refreshing,
+								onRefresh,
+								isChecklist,
+								tags,
+								onAdd,
+								onSelect,
+								onToggle,
+								onToggleChecklist,
+								onCreateTag,
+								onDeleteTag,
+							}) {
 	const { colors } = useTheme();
 	const styles = createStyles(colors);
 
-	const [member, setMember] = useState("All");
-	const [recurringOnly, setRecurringOnly] = useState(false);
+	const [selectedTags, setSelectedTags] = useState([]); // empty = "All"
+	const [tagModalVisible, setTagModalVisible] = useState(false);
+
+	function toggleTag(tagId) {
+		setSelectedTags((prev) =>
+			prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId],
+		);
+	}
 
 	const visible = useMemo(
 		() =>
-			products
-				.filter(
-					(item) =>
-						(member === "All" || (member === "You" && item.addedByUserId == Auth.getCurrentUser().uid)) &&
-						(!recurringOnly || item.isRecurring),
-				)
-				.sort((a, b) => Number(a.isRecurring) - Number(b.isRecurring)),
-		[products, member, recurringOnly],
+			products.filter(
+				(item) =>
+					selectedTags.length === 0 || selectedTags.includes(item.tag || ""),
+			),
+		[products, selectedTags],
 	);
 
-	function isProductInChecklist(item: Product): boolean {
-		return checklistProducts.some((w: Product) => w.id === item.id);
+	const sections = useMemo(() => {
+		const groups = new Map();
+
+		for (const item of visible) {
+			let key = item.tag || "";
+			if (key !== "" && !tags.includes(key)) {
+				key = ""; // orphaned tag — treat as untagged until next reload
+			}
+			if (!groups.has(key)) groups.set(key, []);
+			groups.get(key).push(item);
+		}
+
+		const order = ["", ...tags];
+		const keys = [...groups.keys()].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+
+		return keys.map((key) => ({
+			key,
+			title: key === "" ? "UNTAGGED" : key.toUpperCase(),
+			data: groups.get(key),
+		}));
+	}, [visible, tags]);
+
+	function isProductInChecklist(item) {
+		return checklistProducts.some((w) => w.id === item.id);
+	}
+
+	function handleCreateTag(name) {
+		setTagModalVisible(false);
+		onCreateTag(name);
+	}
+
+	function handleDeleteTag(tag) {
+		Alert.alert(
+			"Delete tag?",
+			`Remove "${tag}"? Items with this tag will become untagged.`,
+			[
+				{ text: "Cancel", style: "cancel" },
+				{
+					text: "Delete",
+					style: "destructive",
+					onPress: () => {
+						setSelectedTags((prev) => prev.filter((t) => t !== tag));
+						onDeleteTag(tag);
+					},
+				},
+			],
+		);
 	}
 
 	return (
@@ -37,22 +95,42 @@ export function ProductList({ products, checklistProducts, refreshing, onRefresh
 				showsHorizontalScrollIndicator={false}
 				contentContainerStyle={staticStyles.filters}
 			>
-				{members.map((item) => (
+				<FilterButton
+					label="All"
+					active={selectedTags.length === 0}
+					onPress={() => setSelectedTags([])}
+					onLongPress={() => {}}
+					styles={styles}
+				/>
+				{tags.map((tag) => (
 					<FilterButton
-						key={item}
-						label={item}
-						active={member === item}
-						onPress={() => setMember(item)}
+						key={tag}
+						label={tag}
+						active={selectedTags.includes(tag)}
+						onPress={() => toggleTag(tag)}
+						onLongPress={() => handleDeleteTag(tag)}
 						styles={styles}
 					/>
 				))}
 				<FilterButton
-					label="Recurring"
-					active={recurringOnly}
-					onPress={() => setRecurringOnly((value) => !value)}
+					label="+"
+					active={false}
+					onPress={() => setTagModalVisible(true)}
+					onLongPress={() => {}}
 					styles={styles}
 				/>
 			</ScrollView>
+
+			<PromptModal
+				visible={tagModalVisible}
+				title="New Tag"
+				placeholder="Tag name"
+				confirmLabel="Create"
+				cancelLabel="Cancel"
+				validate={(value) => (value.trim().length > 0 ? null : "Tag name required")}
+				onCancel={() => setTagModalVisible(false)}
+				onConfirm={handleCreateTag}
+			/>
 			<ScrollView
 				style={staticStyles.listScroll}
 				contentContainerStyle={staticStyles.list}
@@ -63,23 +141,21 @@ export function ProductList({ products, checklistProducts, refreshing, onRefresh
 				{visible.length === 0 ? (
 					<EmptyState shopping={isChecklist} onAdd={onAdd} styles={styles} />
 				) : (
-					visible.map((item, index) => (
-						<React.Fragment key={item.id}>
-							{(index === 0 ||
-								visible[index - 1].isRecurring !== item.isRecurring) && (
-								<Text style={styles.section}>
-									{item.isRecurring ? "RECURRING ITEMS" : "THIS WEEK"}
-								</Text>
-							)}
-							<ProductRow
-								item={item}
-								isInChecklist={isProductInChecklist(item)}
-								shopping={isChecklist}
-								onSelect={() => onSelect(item)}
-								onToggle={() => onToggle(item)}
-								onToggleChecklist={() => onToggleChecklist(item)}
-								styles={styles}
-							/>
+					sections.map((section) => (
+						<React.Fragment key={section.key}>
+							<Text style={styles.section}>{section.title}</Text>
+							{section.data.map((item) => (
+								<ProductRow
+									key={item.id}
+									item={item}
+									isInChecklist={isProductInChecklist(item)}
+									shopping={isChecklist}
+									onSelect={() => onSelect(item)}
+									onToggle={() => onToggle(item)}
+									onToggleChecklist={() => onToggleChecklist(item)}
+									styles={styles}
+								/>
+							))}
 						</React.Fragment>
 					))
 				)}
@@ -88,9 +164,14 @@ export function ProductList({ products, checklistProducts, refreshing, onRefresh
 	);
 }
 
-function FilterButton({ label, active, onPress, styles }) {
+function FilterButton({ label, active, onPress, onLongPress, styles }) {
 	return (
-		<Pressable onPress={onPress} style={[styles.filter, active && styles.filterActive]}>
+		<Pressable
+			onPress={onPress}
+			onLongPress={onLongPress}
+			delayLongPress={500}
+			style={[styles.filter, active && styles.filterActive]}
+		>
 			<Text numberOfLines={1} style={[styles.filterText, active && styles.filterTextActive]}>
 				{label}
 			</Text>
@@ -195,7 +276,7 @@ const staticStyles = StyleSheet.create({
 	itemBody: { flex: 1, marginRight: 8 },
 	rightBottomRow: {
 		flexDirection: "row",
-			alignItems: "center",
+		alignItems: "center",
 	},
 });
 
