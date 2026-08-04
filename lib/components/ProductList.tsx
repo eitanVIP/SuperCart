@@ -114,25 +114,23 @@ function ProductRow({ item, isInChecklist, shopping, onSelect, onToggle, onToggl
 				</Pressable>
 			)}
 			<View style={staticStyles.itemBody}>
-				<View style={staticStyles.itemTitleRow}>
-					<View style={staticStyles.nameGroup}>
-						<Text
-							style={[styles.itemName, shopping && item.isChecked && staticStyles.strike]}
-							numberOfLines={1}
-						>
-							{item.name}
-						</Text>
-						{item.isRecurring && <Text style={styles.recurring}>RECURRING</Text>}
-					</View>
-					<Text style={styles.countStyle}>×{item.count}</Text>
+				<View style={staticStyles.nameGroup}>
+					<Text
+						style={[styles.itemName, shopping && item.isChecked && staticStyles.strike]}
+						numberOfLines={1}
+					>
+						{item.name}
+					</Text>
+					{item.isRecurring && <Text style={styles.recurring}>RECURRING</Text>}
 				</View>
 				<Text style={[styles.description, shopping && item.isChecked && staticStyles.strike]}>
 					{item.description === "" ? "No description" : item.description}
 				</Text>
 				<Text style={styles.byline}>Added by {item.addedByName}</Text>
 			</View>
+
 			{!shopping && (
-				<View style={staticStyles.rightControls}>
+				<View style={staticStyles.rightBottomRow}>
 					<Pressable
 						onPress={onToggleChecklist}
 						hitSlop={10}
@@ -143,6 +141,8 @@ function ProductRow({ item, isInChecklist, shopping, onSelect, onToggle, onToggl
 					<Text style={styles.arrow}>›</Text>
 				</View>
 			)}
+
+			<Text style={styles.countStyle}>×{item.count}</Text>
 		</Pressable>
 	);
 }
@@ -179,25 +179,23 @@ const staticStyles = StyleSheet.create({
 	list: { paddingHorizontal: 20, paddingTop: 5, paddingBottom: 110 },
 	listScroll: { flex: 1 },
 	checkedItem: { opacity: 0.52 },
-	itemBody: { flex: 1 },
-	itemTitleRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-	},
 	nameGroup: {
 		flexDirection: "row",
 		alignItems: "center",
-		flex: 1,
-		marginRight: 8,
 		gap: 6,
 	},
 	strike: { textDecorationLine: "line-through" },
 	empty: { paddingTop: 90, alignItems: "center", paddingHorizontal: 34 },
-	rightControls: {
+	rightColumn: {
+		width: 90,
+		alignItems: "flex-end",
+		justifyContent: "space-between",
+		alignSelf: "stretch",
+	},
+	itemBody: { flex: 1, marginRight: 8 },
+	rightBottomRow: {
 		flexDirection: "row",
-		alignItems: "center",
-		gap: 14,
+			alignItems: "center",
 	},
 });
 
@@ -233,6 +231,7 @@ const createStyles = (colors) =>
 			padding: 12,
 			flexDirection: "row",
 			alignItems: "center",
+			position: "relative",
 		},
 		checkbox: {
 			width: 27,
@@ -286,12 +285,6 @@ const createStyles = (colors) =>
 			backgroundColor: colors.primary,
 		},
 		emptyButtonText: { color: colors.onPrimary, fontWeight: "800" },
-		countStyle: {
-			fontSize: 13,
-			fontWeight: "700",
-			color: colors.textMuted,
-			flexShrink: 0,
-		},
 		checklistToggle: {
 			width: 44,
 			height: 26,
@@ -299,6 +292,7 @@ const createStyles = (colors) =>
 			backgroundColor: colors.borderLight,
 			padding: 3,
 			justifyContent: "center",
+			marginRight: 12,
 		},
 		checklistToggleActive: {
 			backgroundColor: colors.primary,
@@ -312,5 +306,13 @@ const createStyles = (colors) =>
 		},
 		checklistToggleKnobActive: {
 			alignSelf: "flex-end",
+		},
+		countStyle: {
+			position: "absolute",
+			top: 12,
+			right: 12,
+			fontSize: 13,
+			fontWeight: "700",
+			color: colors.textMuted,
 		},
 	});

@@ -304,30 +304,44 @@ export function DetailsSheet({ item, visible, onClose, onEdit, onDelete, onDelet
                 </Pressable>
                 <Pressable
                     style={styles.remove}
-                    onPress={() =>
-                        Alert.alert("Delete item?", `Remove ${item.name} from this week's list or remove forever?`, [
+                    onPress={() => {
+                        // Alert.alert("Delete item?", `Remove ${item.name} from this week's list or remove forever?`, [
+                        //     {
+                        //         text: "Cancel",
+                        //         style: "cancel"
+                        //     },
+                        //     {
+                        //         text: "Delete ultimately",
+                        //         style: "destructive",
+                        //         onPress: () => {
+                        //             onDeleteUlt(item);
+                        //             onClose();
+                        //         },
+                        //     },
+                        //     {
+                        //         text: "Delete from this week",
+                        //         style: "destructive",
+                        //         onPress: () => {
+                        //             onDelete(item);
+                        //             onClose();
+                        //         },
+                        //     },
+                        // ]);
+                        Alert.alert("Delete item?", `Remove ${item.name} from the list forever?`, [
                             {
                                 text: "Cancel",
                                 style: "cancel"
                             },
                             {
-                                text: "Delete ultimately",
+                                text: "Delete",
                                 style: "destructive",
                                 onPress: () => {
                                     onDeleteUlt(item);
                                     onClose();
                                 },
-                            },
-                            {
-                                text: "Delete from this week",
-                                style: "destructive",
-                                onPress: () => {
-                                    onDelete(item);
-                                    onClose();
-                                },
-                            },
-                        ])
-                    }
+                            }
+                        ]);
+                    }}
                 >
                     <Text style={styles.removeText}>Delete</Text>
                 </Pressable>

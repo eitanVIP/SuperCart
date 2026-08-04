@@ -246,18 +246,21 @@ export async function setProductToChecklistInDatabase(
     family: Family,
     product: Product,
     inChecklist: boolean,
+    noreturn: boolean = false
 ): Promise<Family> {
     if (inChecklist) {
         // Add product to checklist
         await saveDocument(collection('families'), family.id, {
             checklistProducts: arrayUnion(product.id),
         });
+
+        return {
+            ...family,
+            checklistProducts: [...family.checklistProducts, product],
+        };
     } else {
         // Remove product's properties
         await saveDocument(collection(`families/${family.id}/allProducts`), product.id, {
-            count: 1,
-            isRecurring: false,
-            addedByUserId: null,
             isChecked: false,
             checkedAt: null,
         });
@@ -266,12 +269,25 @@ export async function setProductToChecklistInDatabase(
         await saveDocument(collection('families'), family.id, {
             checklistProducts: arrayRemove(product.id),
         });
-    }
 
-    return {
-        ...family,
-        checklistProducts: [...family.checklistProducts, product],
-    };
+        if (noreturn) {
+            return {
+                ...family
+            };
+        }
+
+        const updatedProduct: Product = {
+            ...product,
+            isChecked: false,
+            checkedAt: null,
+        };
+
+        return {
+            ...family,
+            allProducts: family.allProducts.map(p => p.id === product.id ? updatedProduct : p),
+            checklistProducts: family.checklistProducts.filter(p => p.id !== product.id),
+        };
+    }
 }
 
 export async function updateProductInDatabase(
@@ -428,11 +444,8 @@ async function loadProductsFromDatabase(family: Family): Promise<{ allProducts: 
         };
 
         if (newProduct.isChecked && hasDayPassedSince(newProduct.checkedAt)) {
-            await setProductToChecklistInDatabase(family, newProduct, false);
+            await setProductToChecklistInDatabase(family, newProduct, false, true);
 
-            newProduct.count = 1;
-            newProduct.isRecurring = false;
-            newProduct.addedByUserId = null;
             newProduct.isChecked = false;
             newProduct.checkedAt = null;
 

@@ -1,5 +1,5 @@
 import React, {useCallback, useRef, useState} from "react";
-import {Alert, Animated, Dimensions, PanResponder, Pressable, StyleSheet, Text, View,} from "react-native";
+import {Alert, Dimensions, Pressable, StyleSheet, Text, View,} from "react-native";
 import {LoadingIndicator, TopBar} from "@/lib/components/ui";
 import {BottomNav} from "@/lib/components/BottomNav";
 import {AddProductSheet, DetailsSheet, EditProductSheet} from "@/lib/components/ProductSheets";
@@ -15,6 +15,7 @@ import {
     isUserInFamily,
     leaveFamilyInDatabase,
     loadFamilyFromDatabase,
+    setProductToChecklistInDatabase,
     toggleProductInDatabase,
     updateFamilyInDatabase,
     updateProductInDatabase,
@@ -23,6 +24,7 @@ import {log} from "@/lib/util";
 import {useSnackbar} from "@/context/SnackbarContext";
 import {Family, Product, Profile} from "@/lib/types";
 import {useTheme} from "@/theme/ThemeContext";
+import PagerView from "react-native-pager-view";
 
 const { width } = Dimensions.get("window");
 const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
@@ -57,39 +59,13 @@ export default function MainAppPage() {
         router.replace("/(auth)");
     }
 
-    const translateX = useRef(new Animated.Value(0)).current;
-    const pageRef = useRef(0);
-    const goTo = (nextPage) => {
-        const safePage = clamp(nextPage, 0, 2);
-        pageRef.current = safePage;
-        setPage(safePage);
-        Animated.spring(translateX, {
-            toValue: -safePage * width,
-            useNativeDriver: true,
-            damping: 22,
-            stiffness: 230,
-            mass: 0.7,
-        }).start();
-    };
+    const pagerRef = useRef<PagerView>(null);
 
-    const pan = useRef(
-        PanResponder.create({
-            onMoveShouldSetPanResponder: (_, gesture) =>
-                Math.abs(gesture.dx) > 8 && Math.abs(gesture.dx) > Math.abs(gesture.dy),
-            onPanResponderMove: (_, gesture) =>
-                translateX.setValue(clamp(-pageRef.current * width + gesture.dx, -2 * width, 0)),
-            onPanResponderRelease: (_, gesture) => {
-                const change =
-                    gesture.dx < -width * 0.18 || gesture.vx < -0.45
-                        ? 1
-                        : gesture.dx > width * 0.18 || gesture.vx > 0.45
-                            ? -1
-                            : 0;
-                goTo(pageRef.current + change);
-            },
-            onPanResponderTerminate: () => goTo(pageRef.current),
-        }),
-    ).current;
+    const goTo = (nextPage: number) => {
+        const safePage = clamp(nextPage, 0, 2);
+        setPage(safePage);
+        pagerRef.current?.setPage(safePage);
+    };
 
     const openDetails = (item) => {
         setSelected(item);
@@ -143,101 +119,137 @@ export default function MainAppPage() {
                 onAction={signOut}
             />
 
-            <View style={staticStyles.pagerViewport} {...pan.panHandlers}>
-                <Animated.View style={[staticStyles.pages, { transform: [{ translateX }] }]}>
-                    <Page>
-                        <GroceriesScreen
-                            products={family.allProducts}
-                            checklistProducts={family.checklistProducts}
-                            refreshing={refreshing}
-                            onRefresh={onRefresh}
-                            setSheet={setSheet}
-                            openDetails={openDetails}
-                            toggleChecklist={() => {}}
-                        />
-                    </Page>
-                    <Page>
-                        <ChecklistScreen
-                            products={family.checklistProducts}
-                            checklistProducts={family.checklistProducts}
-                            refreshing={refreshing}
-                            onRefresh={onRefresh}
-                            openDetails={openDetails}
-                            toggleProduct={(product: Product) => {
-                                const checkedAt: number | null = !product.isChecked ? Date.now() : null;
+            <PagerView
+                ref={pagerRef}
+                style={staticStyles.pagerViewport}
+                initialPage={0}
+                offscreenPageLimit={2} // Keeps pages pre-rendered in memory so swipes don't lag
+                onPageSelected={(e) => {
+                    setPage(e.nativeEvent.position);
+                }}
+            >
+                <Page active={page === 0}>
+                    <GroceriesScreen
+                        products={family.allProducts}
+                        checklistProducts={family.checklistProducts}
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        setSheet={setSheet}
+                        openDetails={openDetails}
+                        toggleChecklist={(product: Product) => {
+                            function isProductInChecklist(item: Product): boolean {
+                                return family.checklistProducts.some((w: Product) => w.id === item.id);
+                            }
+
+                            const originalFamily = family;
+
+                            if (!isProductInChecklist(product)) {
+                                setFamily({
+                                    ...family,
+                                    checklistProducts: [...family.checklistProducts, product],
+                                });
+                            } else {
                                 const updatedProduct: Product = {
-                                    id: product.id,
-                                    name: product.name,
-                                    description: product.description,
-                                    count: product.count,
-                                    imageUrl: product.imageUrl,
-                                    addedByUserId: product.addedByUserId,
-                                    addedByName: product.addedByName,
-                                    isRecurring: product.isRecurring,
-                                    isChecked: !product.isChecked,
-                                    checkedAt: checkedAt,
+                                    ...product,
+                                    isChecked: false,
+                                    checkedAt: null,
                                 };
-                                const originalFamily = family;
 
                                 setFamily({
                                     ...family,
-                                    allProducts: family.allProducts.map(p =>
-                                        p.id === updatedProduct.id ? updatedProduct : p
-                                    ),
-                                    checklistProducts: family.checklistProducts.map(p =>
-                                        p.id === updatedProduct.id ? updatedProduct : p
-                                    ),
+                                    allProducts: family.allProducts.map(p => p.id === product.id ? updatedProduct : p),
+                                    checklistProducts: family.checklistProducts.filter(p => p.id !== product.id),
                                 });
+                            }
 
-                                toggleProductInDatabase(family, product).catch(err => {
-                                    setFamily(originalFamily);
-                                    log("Main App", "Failed to toggle product: " + err.message, showSnackbar);
-                                });
-                            }}
-                        />
-                    </Page>
-                    <Page>
-                        <SettingsScreen
-                            family={family}
-                            onLogout={signOut}
-                            onSaveFamily={(name: string, weekStartDay: string) => {
-                                updateFamilyInDatabase(family, name, weekStartDay).then(newFamily => {
-                                    setFamily(newFamily);
-                                    log("Settings", "successfully updated family", showSnackbar);
-                                }).catch(err => {
-                                    log("Settings", "failed to update family: " + err.message, showSnackbar);
-                                });
-                            }}
-                            onLeaveFamily={() => {
-                                leaveFamilyInDatabase().then(() => {
-                                    setFamily(null);
-                                    router.replace("/(auth)/family-gate-page");
-                                }).catch(err => {
-                                    log("Settings", "failed to leave family: " + err.message, showSnackbar);
-                                });
-                            }}
-                            profile={profile}
-                            onSaveProfile={(profile: Profile, password: string) => {
-                                Auth.verifyPassword(password).then(result => {
-                                    if (!result) {
-                                        Alert.alert("Wrong password", "Enter the correct current password");
-                                        return;
-                                    }
+                            setProductToChecklistInDatabase(family, product, !isProductInChecklist(product)).catch(err => {
+                                setFamily(originalFamily);
+                                log("Main App", "Failed to toggle product: " + err.message, showSnackbar);
+                            });
+                        }}
+                    />
+                </Page>
+                <Page active={page === 1}>
+                    <ChecklistScreen
+                        products={family.checklistProducts}
+                        checklistProducts={family.checklistProducts}
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        openDetails={openDetails}
+                        toggleProduct={(product: Product) => {
+                            const checkedAt: number | null = !product.isChecked ? Date.now() : null;
+                            const updatedProduct: Product = {
+                                id: product.id,
+                                name: product.name,
+                                description: product.description,
+                                count: product.count,
+                                imageUrl: product.imageUrl,
+                                addedByUserId: product.addedByUserId,
+                                addedByName: product.addedByName,
+                                isRecurring: product.isRecurring,
+                                isChecked: !product.isChecked,
+                                checkedAt: checkedAt,
+                            };
+                            const originalFamily = family;
 
-                                    updateProfile(profile.name, profile.photoUrl).then(() => {
-                                        setProfile({name: profile.name, photoUrl: profile.photoUrl});
-                                        log("Settings", "successfully updated profile", showSnackbar);
-                                    }).catch(err => {
-                                        log("Settings", "failed to update profile: " + err.message, showSnackbar);
-                                    });
-                                }).catch((err) => {
-                                    log("Settings", "failed to verify password: " + err.message, showSnackbar);
+                            setFamily({
+                                ...family,
+                                allProducts: family.allProducts.map(p =>
+                                    p.id === updatedProduct.id ? updatedProduct : p
+                                ),
+                                checklistProducts: family.checklistProducts.map(p =>
+                                    p.id === updatedProduct.id ? updatedProduct : p
+                                ),
+                            });
+
+                            toggleProductInDatabase(family, product).catch(err => {
+                                setFamily(originalFamily);
+                                log("Main App", "Failed to toggle product: " + err.message, showSnackbar);
+                            });
+                        }}
+                    />
+                </Page>
+                <Page active={page === 2}>
+                    <SettingsScreen
+                        family={family}
+                        onLogout={signOut}
+                        onSaveFamily={(name: string, weekStartDay: string) => {
+                            updateFamilyInDatabase(family, name, weekStartDay).then(newFamily => {
+                                setFamily(newFamily);
+                                log("Settings", "successfully updated family", showSnackbar);
+                            }).catch(err => {
+                                log("Settings", "failed to update family: " + err.message, showSnackbar);
+                            });
+                        }}
+                        onLeaveFamily={() => {
+                            leaveFamilyInDatabase().then(() => {
+                                setFamily(null);
+                                router.replace("/(auth)/family-gate-page");
+                            }).catch(err => {
+                                log("Settings", "failed to leave family: " + err.message, showSnackbar);
+                            });
+                        }}
+                        profile={profile}
+                        onSaveProfile={(profile: Profile, password: string) => {
+                            Auth.verifyPassword(password).then(result => {
+                                if (!result) {
+                                    Alert.alert("Wrong password", "Enter the correct current password");
+                                    return;
+                                }
+
+                                updateProfile(profile.name, profile.photoUrl).then(() => {
+                                    setProfile({name: profile.name, photoUrl: profile.photoUrl});
+                                    log("Settings", "successfully updated profile", showSnackbar);
+                                }).catch(err => {
+                                    log("Settings", "failed to update profile: " + err.message, showSnackbar);
                                 });
-                            }}
-                        />
-                    </Page>
-                </Animated.View>
-            </View>
+                            }).catch((err) => {
+                                log("Settings", "failed to verify password: " + err.message, showSnackbar);
+                            });
+                        }}
+                    />
+                </Page>
+            </PagerView>
 
             {page < 1 && (
                 <Pressable style={styles.fab} onPress={() => setSheet("add")}>
@@ -307,8 +319,15 @@ export default function MainAppPage() {
         </>
     );
 }
-function Page({ children }) {
-    return <View style={staticStyles.page}>{children}</View>;
+function Page({ children, active }: { children: React.ReactNode; active: boolean }) {
+    return (
+        <View
+            style={staticStyles.page}
+            pointerEvents={active ? "auto" : "none"}
+        >
+            {children}
+        </View>
+    );
 }
 
 const staticStyles = StyleSheet.create({
