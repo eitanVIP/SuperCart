@@ -158,7 +158,7 @@ const createStyles = (colors) =>
 			alignItems: "center",
 			justifyContent: "center",
 		},
-		initialText: { color: colors.onPrimary, fontSize: 20, fontWeight: "800" },
+		initialText: { color: colors.textOnPrimary, fontSize: 20, fontWeight: "800" },
 		cardText: { fontSize: 16, fontWeight: "800", color: colors.text },
 		cardDesc: { fontSize: 13, color: colors.textMuted, marginTop: 3 },
 		group: {

@@ -253,7 +253,7 @@ const createStyles = (colors) =>
             alignItems: "center",
             justifyContent: "center",
         },
-        avatarInitial: { fontSize: 32, fontWeight: "800", color: colors.onPrimary },
+        avatarInitial: { fontSize: 32, fontWeight: "800", color: colors.textOnPrimary },
         avatarLabel: { fontSize: 13, fontWeight: "700", color: colors.primary, marginTop: 8 },
         codeBlock: {
             backgroundColor: colors.primaryLighter,

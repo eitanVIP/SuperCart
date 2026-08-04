@@ -249,7 +249,7 @@ const createStyles = (colors) =>
             borderRadius: 14,
             marginTop: 20,
         },
-        primaryText: { color: colors.text, fontSize: 16, fontWeight: "800" },
+        primaryText: { color: colors.textOnPrimary, fontSize: 16, fontWeight: "800" },
         inputLabel: {
             fontSize: 10,
             color: colors.textMuted,

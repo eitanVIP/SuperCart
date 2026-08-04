@@ -316,7 +316,7 @@ export function DetailsSheet({ item, visible, onClose, onEdit, onDelete, onDelet
             </View>
             <View style={staticStyles.actions}>
                 <Pressable style={styles.button} onPress={onEdit}>
-                    <Text style={styles.buttonText}>Edit item</Text>
+                    <Text style={{ fontWeight: "800", color: colors.textOnPrimary }}>Edit item</Text>
                 </Pressable>
                 <Pressable
                     style={styles.remove}

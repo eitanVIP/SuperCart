@@ -7,6 +7,7 @@ export const lightColors = {
 
     // Text
     text: "#1B3326",           // primary titles, item names
+    textOnPrimary: "#EAF2ED",
     textSecondary: "#718178",  // subtitles, descriptions
     textMuted: "#819087",      // byline "Added by X"
     textFaint: "#7A8D82",      // section headers (THIS WEEK, eyebrow)
@@ -58,6 +59,7 @@ export const darkColors = {
 
     // Text
     text: "#EAF2ED",
+    textOnPrimary: "#EAF2ED",
     textSecondary: "#9AAAA1",
     textMuted: "#7E9089",
     textFaint: "#7A8D82",

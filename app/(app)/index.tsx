@@ -390,5 +390,5 @@ const createStyles = (colors) =>
             shadowRadius: 10,
             elevation: 6,
         },
-        fabText: { color: colors.text, fontSize: 31, fontWeight: "300", lineHeight: 34 },
+        fabText: { color: colors.textOnPrimary, fontSize: 31, fontWeight: "300", lineHeight: 34 },
     });
