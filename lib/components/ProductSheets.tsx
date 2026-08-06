@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
-import {Alert, Image, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View} from "react-native";
+import {Alert, Image, Pressable, StyleSheet, Switch, Text, TextInput, View} from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import {BottomSheet, PrimaryButton, PromptModal, TagChip} from "./ui";
+import {BottomSheet, PrimaryButton, PromptModal, TagsBar} from "./ui";
 import {useTheme} from "@/theme/ThemeContext";
 import {Product} from "@/lib/types";
 import * as Auth from "@/lib/auth";
@@ -113,7 +113,50 @@ function useProductForm(initial: Product = {name: "", description: "", tag: "", 
     };
 }
 
-function ProductFormFields({ form, tags, colors, styles }) {
+function ProductFormFields({ form, tags, onCreateTag, onDeleteTag, onRenameTag, colors, styles }) {
+    const [tagCreateModalVisible, setTagCreateModalVisible] = useState(false);
+    const [tagRenameModalVisible, setTagRenameModalVisible] = useState(false);
+    const [selectedRenameTag, setSelectedRenameTag] = useState("");
+
+    function handleCreateTag(name) {
+        setTagCreateModalVisible(false);
+        onCreateTag(name);
+    }
+
+    function handleRenameTag(name) {
+        setTagRenameModalVisible(false);
+        onRenameTag(selectedRenameTag, name);
+    }
+
+    function handleLongPressTag(tag) {
+        Alert.alert(
+            "Tag options",
+            `Remove "${tag}"? Items with this tag will become untagged. Or rename "${tag}"? Items with this tag will be updated`,
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Rename",
+                    style: "default",
+                    onPress: () => {
+                        if (form.tag === tag)
+                            form.setTag("");
+                        setTagRenameModalVisible(true);
+                        setSelectedRenameTag(tag);
+                    },
+                },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: () => {
+                        if (form.tag === tag)
+                            form.setTag("");
+                        onDeleteTag(tag);
+                    },
+                },
+            ],
+        );
+    }
+
     return (
         <>
             <PhotoControl uri={form.imageUrl} onChange={form.setImageUrl} styles={styles} />
@@ -136,29 +179,38 @@ function ProductFormFields({ form, tags, colors, styles }) {
                 style={styles.input}
             />
             {tags && (<>
-                <Text style={styles.label}>TAG</Text>
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={staticStyles.tagRow}
-                >
-                    <TagChip
-                        label="No tag"
-                        active={form.tag === ""}
-                        onPress={() => form.setTag("")}
-                        colors={colors}
-                    />
-                    {tags.map((t) => (
-                        <TagChip
-                            key={t}
-                            label={t}
-                            active={form.tag === t}
-                            onPress={() => form.setTag(t)}
-                            colors={colors}
-                        />
-                    ))}
-                </ScrollView>
+                <TagsBar
+                    tags={tags}
+                    selectedTags={form.tag === "" ? [] : [form.tag]}
+                    onToggleTag={form.setTag}
+                    onSelectAllNone={() => form.setTag("")}
+                    isAllTag={false}
+                    onAddPress={handleCreateTag}
+                    onLongPressTag={handleLongPressTag}
+                    styles={styles}
+                />
             </>)}
+            <PromptModal
+                visible={tagCreateModalVisible}
+                title="New Tag"
+                placeholder="Tag name"
+                confirmLabel="Create"
+                cancelLabel="Cancel"
+                validate={(value) => (value.trim().length > 0 ? null : "Tag name required")}
+                onCancel={() => setTagCreateModalVisible(false)}
+                onConfirm={handleCreateTag}
+            />
+            <PromptModal
+                visible={tagRenameModalVisible}
+                title="Rename Tag"
+                placeholder="Tag name"
+                initialValue={selectedRenameTag}
+                confirmLabel="Rename"
+                cancelLabel="Cancel"
+                validate={(value) => (value.trim().length > 0 ? null : "Tag name required")}
+                onCancel={() => setTagRenameModalVisible(false)}
+                onConfirm={handleRenameTag}
+            />
             <Text style={styles.label}>COUNT</Text>
             <TextInput
                 value={form.count.toString()}
@@ -173,7 +225,7 @@ function ProductFormFields({ form, tags, colors, styles }) {
     );
 }
 
-export function AddProductSheet({ visible, onCloseSheet, onAdd, allProducts, checklistProducts, onAddFromHistory, tags }) {
+export function AddProductSheet({ visible, onCloseSheet, onAdd, allProducts, checklistProducts, onAddFromHistory, tags, onCreateTag, onDeleteTag, onRenameTag }) {
     const { colors } = useTheme();
     const styles = createStyles(colors);
     const [fromHistory, setFromHistory] = useState(false);
@@ -207,7 +259,7 @@ export function AddProductSheet({ visible, onCloseSheet, onAdd, allProducts, che
             {!fromHistory && (<>
                 <Text style={styles.title}>Add an item</Text>
                 <Text style={styles.sub}>It will be shared with your family.</Text>
-                <ProductFormFields form={form} tags={tags} colors={colors} styles={styles} />
+                <ProductFormFields form={form} tags={tags} onCreateTag={onCreateTag} onDeleteTag={onDeleteTag} onRenameTag={onRenameTag} colors={colors} styles={styles} />
                 <PrimaryButton label="Add to list" onPress={add} />
             </>)}
 
@@ -239,7 +291,7 @@ export function AddProductSheet({ visible, onCloseSheet, onAdd, allProducts, che
     );
 }
 
-export function EditProductSheet({ item, visible, onCloseSheet, onSave, tags }) {
+export function EditProductSheet({ item, visible, onCloseSheet, onSave, tags, onCreateTag, onDeleteTag, onRenameTag }) {
     const { colors } = useTheme();
     const styles = createStyles(colors);
     const form = useProductForm();
@@ -270,7 +322,7 @@ export function EditProductSheet({ item, visible, onCloseSheet, onSave, tags }) 
     return (
         <BottomSheet visible={visible} onClose={onClose}>
             <Text style={styles.title}>Edit item</Text>
-            <ProductFormFields form={form} tags={tags} colors={colors} styles={styles} />
+            <ProductFormFields form={form} tags={tags} onCreateTag={onCreateTag} onDeleteTag={onDeleteTag} onRenameTag={onRenameTag} colors={colors} styles={styles} />
             <PrimaryButton label="Save changes" onPress={save} />
         </BottomSheet>
     );
@@ -532,4 +584,16 @@ const createStyles = (colors) =>
             backgroundColor: colors.card,
             overflow: "hidden",
         },
+        filter: {
+            height: 37,
+            paddingHorizontal: 15,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: colors.borderLight,
+            backgroundColor: colors.surface,
+            justifyContent: "center",
+        },
+        filterActive: { backgroundColor: colors.primaryLighter, borderColor: colors.border },
+        filterText: { fontSize: 13, color: colors.textSecondary, fontWeight: "700" },
+        filterTextActive: { color: colors.primaryDark },
     });

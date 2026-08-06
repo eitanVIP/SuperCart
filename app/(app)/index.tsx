@@ -17,6 +17,7 @@ import {
     isUserInFamily,
     leaveFamilyInDatabase,
     loadFamilyFromDatabase,
+    renameTagInDatabase,
     setProductToChecklistInDatabase,
     toggleProductInDatabase,
     updateFamilyInDatabase,
@@ -153,6 +154,14 @@ export default function MainAppPage() {
                                 log("Main App", "failed to delete tag: " + err.message, showSnackbar);
                             });
                         }}
+                        onRenameTag={(tag: string, newName: string) => {
+                            renameTagInDatabase(family, tag, newName).then(newFamily => {
+                                setFamily(newFamily);
+                                log("Main App", "successfully renamed tag", showSnackbar);
+                            }).catch(err => {
+                                log("Main App", "failed to rename tag: " + err.message, showSnackbar);
+                            });
+                        }}
                         setSheet={setSheet}
                         openDetails={openDetails}
                         toggleChecklist={(product: Product) => {
@@ -183,7 +192,7 @@ export default function MainAppPage() {
 
                             setProductToChecklistInDatabase(family, product, !isProductInChecklist(product)).catch(err => {
                                 setFamily(originalFamily);
-                                log("Main App", "Failed to toggle product: " + err.message, showSnackbar);
+                                log("Main App", "failed to toggle product: " + err.message, showSnackbar);
                             });
                         }}
                     />
@@ -211,6 +220,14 @@ export default function MainAppPage() {
                                 log("Main App", "failed to delete tag: " + err.message, showSnackbar);
                             });
                         }}
+                        onRenameTag={(tag: string, newName: string) => {
+                            renameTagInDatabase(family, tag, newName).then(newFamily => {
+                                setFamily(newFamily);
+                                log("Main App", "successfully renamed tag", showSnackbar);
+                            }).catch(err => {
+                                log("Main App", "failed to rename tag: " + err.message, showSnackbar);
+                            });
+                        }}
                         openDetails={openDetails}
                         toggleProduct={(product: Product) => {
                             const checkedAt: number | null = !product.isChecked ? Date.now() : null;
@@ -233,7 +250,7 @@ export default function MainAppPage() {
 
                             toggleProductInDatabase(family, product).catch(err => {
                                 setFamily(originalFamily);
-                                log("Main App", "Failed to toggle product: " + err.message, showSnackbar);
+                                log("Main App", "failed to toggle product: " + err.message, showSnackbar);
                             });
                         }}
                     />
@@ -310,6 +327,30 @@ export default function MainAppPage() {
                     // });
                 }}
                 tags={family.tags}
+                onCreateTag={(tag: string) => {
+                    createTagInDatabase(family, tag).then(newFamily => {
+                        setFamily(newFamily);
+                        log("Main App", "successfully created tag", showSnackbar);
+                    }).catch(err => {
+                        log("Main App", "failed to create tag: " + err.message, showSnackbar);
+                    });
+                }}
+                onDeleteTag={(tag: string) => {
+                    deleteTagInDatabase(family, tag).then(newFamily => {
+                        setFamily(newFamily);
+                        log("Main App", "successfully deleted tag", showSnackbar);
+                    }).catch(err => {
+                        log("Main App", "failed to delete tag: " + err.message, showSnackbar);
+                    });
+                }}
+                onRenameTag={(tag: string, newName: string) => {
+                    renameTagInDatabase(family, tag, newName).then(newFamily => {
+                        setFamily(newFamily);
+                        log("Main App", "successfully renamed tag", showSnackbar);
+                    }).catch(err => {
+                        log("Main App", "failed to rename tag: " + err.message, showSnackbar);
+                    });
+                }}
             />
             <DetailsSheet
                 item={selected}
@@ -346,6 +387,30 @@ export default function MainAppPage() {
                     });
                 }}
                 tags={family.tags}
+                onCreateTag={(tag: string) => {
+                    createTagInDatabase(family, tag).then(newFamily => {
+                        setFamily(newFamily);
+                        log("Main App", "successfully created tag", showSnackbar);
+                    }).catch(err => {
+                        log("Main App", "failed to create tag: " + err.message, showSnackbar);
+                    });
+                }}
+                onDeleteTag={(tag: string) => {
+                    deleteTagInDatabase(family, tag).then(newFamily => {
+                        setFamily(newFamily);
+                        log("Main App", "successfully deleted tag", showSnackbar);
+                    }).catch(err => {
+                        log("Main App", "failed to delete tag: " + err.message, showSnackbar);
+                    });
+                }}
+                onRenameTag={(tag: string, newName: string) => {
+                    renameTagInDatabase(family, tag, newName).then(newFamily => {
+                        setFamily(newFamily);
+                        log("Main App", "successfully renamed tag", showSnackbar);
+                    }).catch(err => {
+                        log("Main App", "failed to rename tag: " + err.message, showSnackbar);
+                    });
+                }}
             />
         </>
     );

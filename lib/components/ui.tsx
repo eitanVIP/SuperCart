@@ -6,6 +6,7 @@ import {
     Modal,
     Platform,
     Pressable,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -182,31 +183,54 @@ export function PromptModal({
     );
 }
 
-export function TagChip({ label, active, onPress, colors }) {
+export function TagChip({ label, active, onPress, onLongPress, styles }) {
     return (
         <Pressable
             onPress={onPress}
-            style={{
-                height: 37,
-                paddingHorizontal: 15,
-                borderRadius: 20,
-                borderWidth: 1,
-                justifyContent: "center",
-                borderColor: active ? colors.border : colors.borderOnSheet,
-                backgroundColor: active ? colors.primaryLighter : colors.card,
-            }}
+            onLongPress={onLongPress}
+            delayLongPress={500}
+            style={[styles.filter, active && styles.filterActive]}
         >
-            <Text
-                numberOfLines={1}
-                style={{
-                    fontSize: 13,
-                    fontWeight: "700",
-                    color: active ? colors.primaryDark : colors.textSecondary,
-                }}
-            >
+            <Text numberOfLines={1} style={[styles.filterText, active && styles.filterTextActive]}>
                 {label}
             </Text>
         </Pressable>
+    );
+}
+
+export function TagsBar({ tags, selectedTags, onToggleTag, onSelectAllNone, isAllTag, onAddPress, onLongPressTag, styles }) {
+    return (
+        <ScrollView
+            horizontal
+            style={staticStyles.filtersScroll}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={staticStyles.filters}
+        >
+            <TagChip
+                label={isAllTag ? "All" : "No Tag"}
+                active={selectedTags.length === 0}
+                onPress={onSelectAllNone}
+                onLongPress={() => {}}
+                styles={styles}
+            />
+            {tags.map((tag) => (
+                <TagChip
+                    key={tag}
+                    label={tag}
+                    active={selectedTags.includes(tag)}
+                    onPress={() => onToggleTag(tag)}
+                    onLongPress={() => onLongPressTag(tag)}
+                    styles={styles}
+                />
+            ))}
+            <TagChip
+                label="+"
+                active={false}
+                onPress={onAddPress}
+                onLongPress={() => {}}
+                styles={styles}
+            />
+        </ScrollView>
     );
 }
 
@@ -237,6 +261,8 @@ const staticStyles = StyleSheet.create({
         gap: 10,
         marginTop: 16,
     },
+    filtersScroll: { flexGrow: 0 },
+    filters: { paddingHorizontal: 20, paddingVertical: 14, gap: 9 },
 });
 
 const createStyles = (colors) =>
@@ -325,5 +351,5 @@ const createStyles = (colors) =>
             alignItems: "center",
             justifyContent: "center",
         },
-        primaryButtonText: { color: colors.onPrimary, fontWeight: "800" },
+        primaryButtonText: { color: colors.textOnPrimary, fontWeight: "800" },
     });

@@ -561,15 +561,32 @@ export async function deleteTagInDatabase(family: Family, tag: string): Promise<
     };
 }
 
-// export async function deleteTagInDatabase_noProductUpdate(family: Family, tag: string): Promise<Family> {
-//     // Only removes the tag from the family's tag list — deliberately skips
-//     // stripping it from products, to test what happens with orphaned tag references
-//     await saveDocument(collection('families'), family.id, {
-//         tags: arrayRemove(tag),
-//     });
-//
-//     return {
-//         ...family,
-//         tags: family.tags.filter((t) => t !== tag),
-//     };
-// }
+export async function renameTagInDatabase(family: Family, oldTag: string, newTag: string): Promise<Family> {
+    // 1. Swap the tag in the family's tag list
+    await saveDocument(collection('families'), family.id, {
+        tags: arrayRemove(oldTag),
+    });
+    await saveDocument(collection('families'), family.id, {
+        tags: arrayUnion(newTag),
+    });
+
+    // 2. Update every product that has the old tag to point at the new one
+    const productsColl = collection(`families/${family.id}/allProducts`);
+    const affectedProducts = family.allProducts.filter((p) => p.tag === oldTag);
+
+    for (const product of affectedProducts) {
+        await saveDocument(productsColl, product.id, { tag: newTag });
+    }
+
+    // 3. Return updated family state
+    return {
+        ...family,
+        tags: family.tags.map((t) => (t === oldTag ? newTag : t)),
+        allProducts: family.allProducts.map((p) =>
+            p.tag === oldTag ? { ...p, tag: newTag } : p
+        ),
+        checklistProducts: family.checklistProducts.map((p) =>
+            p.tag === oldTag ? { ...p, tag: newTag } : p
+        ),
+    };
+}
