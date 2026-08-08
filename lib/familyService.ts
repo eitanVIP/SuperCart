@@ -190,10 +190,10 @@ export async function addProductToDatabase(
     const productId = await addDocument(productsColl, newProductData);
 
     // 4. Update checklistProducts
-    const families = collection('families');
-    await saveDocument(families, family.id, {
-        checklistProducts: arrayUnion(productId),
-    });
+    // const families = collection('families');
+    // await saveDocument(families, family.id, {
+    //     checklistProducts: arrayUnion(productId),
+    // });
 
     // 5. Build new product, then return family with it added
     const newProduct: Product = {
@@ -213,7 +213,6 @@ export async function addProductToDatabase(
     return {
         ...family,
         allProducts: [...family.allProducts, newProduct],
-        // weekProducts: [...family.weekProducts, newProduct],
     };
 }
 
