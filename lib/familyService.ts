@@ -603,7 +603,7 @@ export async function renameTagInDatabase(family: Family, oldTag: string, newTag
     };
 }
 
-const APP_VERSION: number = 9;
+const APP_VERSION: number = 10;
 export async function checkVersion(): Promise<boolean> {
     const versionDoc = await loadDocument(collection("public"), "version");
 

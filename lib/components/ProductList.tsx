@@ -5,7 +5,6 @@ import {PromptModal, TagsBar} from "@/lib/components/ui";
 import {Product} from "@/lib/types";
 
 export interface ProductListProps {
-    products: Product[];
     checklistProducts: Product[];
     refreshing: boolean;
     onRefresh: () => void;
@@ -17,7 +16,7 @@ export interface ProductListProps {
     searchQuery: string;
 }
 
-export function ProductList({props, isChecklist, onAdd, onToggle, onToggleChecklist}: {props: ProductListProps, isChecklist: boolean, onAdd: any, onToggle: any, onToggleChecklist: any}) {
+export function ProductList({props, products, isChecklist, onAdd, onToggle, onToggleChecklist}: {props: ProductListProps, products: Product[], isChecklist: boolean, onAdd: any, onToggle: any, onToggleChecklist: any}) {
     const { colors } = useTheme();
     const styles = createStyles(colors);
 
@@ -34,11 +33,11 @@ export function ProductList({props, isChecklist, onAdd, onToggle, onToggleCheckl
 
     const visible = useMemo(
         () =>
-            props.products.filter(
+            products.filter(
                 (item) =>
                     (selectedTags.length === 0 || selectedTags.includes(item.tag || "")) && (props.searchQuery == null || props.searchQuery.length === 0 || item.name.includes(props.searchQuery)),
             ),
-        [props.products, selectedTags, props.searchQuery],
+        [products, selectedTags, props.searchQuery],
     );
 
     const sections = useMemo(() => {

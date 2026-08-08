@@ -2,8 +2,9 @@ import React from "react";
 import {ProductList, ProductListProps} from "../components/ProductList";
 import ListHeader from "../components/ListHeader";
 import {View} from "react-native";
+import {Product} from "@/lib/types";
 
-export default function GroceriesScreen({props, setSheet, toggleChecklist}: {props: ProductListProps, setSheet: (sheet: string) => void, toggleChecklist: any}) {
+export default function GroceriesScreen({props, products, setSheet, toggleChecklist}: {props: ProductListProps, products: Product[], setSheet: (sheet: string) => void, toggleChecklist: any}) {
     return (
         <View style={{ flexDirection: "column", flex: 1 }}>
             <ListHeader
@@ -12,6 +13,7 @@ export default function GroceriesScreen({props, setSheet, toggleChecklist}: {pro
             />
             <ProductList
                 props={props}
+                products={products}
                 isChecklist={false}
                 onAdd={() => setSheet("add")}
                 onToggle={() => {}}

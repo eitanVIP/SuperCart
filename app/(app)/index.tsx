@@ -118,7 +118,6 @@ export default function MainAppPage() {
     }
 
     const pageProps: ProductListProps = {
-        products: family.allProducts,
         checklistProducts: family.checklistProducts,
         refreshing: refreshing,
         onRefresh: onRefresh,
@@ -171,6 +170,7 @@ export default function MainAppPage() {
                 <Page active={page === 0}>
                     <GroceriesScreen
                         props={pageProps}
+                        products={family.allProducts}
                         setSheet={setSheet}
                         toggleChecklist={(product: Product) => {
                             function isProductInChecklist(item: Product): boolean {
@@ -208,6 +208,7 @@ export default function MainAppPage() {
                 <Page active={page === 1}>
                     <ChecklistScreen
                         props={pageProps}
+                        products={family.checklistProducts}
                         toggleProduct={(product: Product) => {
                             const checkedAt: number | null = !product.isChecked ? Date.now() : null;
                             const updatedProduct: Product = {
