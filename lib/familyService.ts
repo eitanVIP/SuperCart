@@ -428,49 +428,62 @@ async function loadProductsFromDatabase(family: Family): Promise<{ allProducts: 
 
     const productsColl = collection(`families/${family.id}/allProducts`);
     const productsDocs = await loadCollection(productsColl);
-    const productMap = new Map(productsDocs.map(doc => [doc.id, doc.data as ProductDatabase]));
 
-    const allProducts: Product[] = [];
-    const checklistProducts: Product[] = [];
+    // Dedupe profile lookups — fetch each unique user's profile only once
+    const uniqueUserIds = [...new Set(productsDocs.map(d => (d.data as ProductDatabase).addedByUserId))];
+    const profileEntries = await Promise.all(
+        uniqueUserIds.map(async (userId) => [userId, await readProfile(userId)] as const)
+    );
+    const profileMap = new Map(profileEntries);
 
-    for (const [docId, productDatabase] of productMap) {
-        const addedByUserId = productDatabase.addedByUserId;
-        const addedByProfile = await readProfile(addedByUserId);
-        const addedByName = addedByProfile && addedByProfile.name ? addedByProfile.name : "Unknown";
+    const checklistUpdates: Promise<unknown>[] = [];
 
-        let tag = productDatabase.tag;
-        if (tag && !validTags.includes(tag)) {
-            await saveDocument(productsColl, docId, { tag: "" });
-            tag = "";
-        }
+    // Process every product in parallel instead of one at a time
+    const allProducts: Product[] = await Promise.all(
+        productsDocs.map(async ({ id: docId, data }) => {
+            const productDatabase = data as ProductDatabase;
+            const addedByUserId = productDatabase.addedByUserId;
+            const addedByProfile = profileMap.get(addedByUserId);
+            const addedByName = addedByProfile?.name ?? "Unknown";
 
-        const newProduct: Product = {
-            id: docId,
-            name: productDatabase.name,
-            description: productDatabase.description,
-            count: productDatabase.count,
-            imageUrl: productDatabase.imageUrl,
-            isRecurring: productDatabase.isRecurring,
-            addedByUserId: addedByUserId,
-            addedByName: addedByName,
-            isChecked: productDatabase.isChecked,
-            checkedAt: productDatabase.checkedAt,
-            tag: tag,
-        };
+            let tag = productDatabase.tag;
+            if (tag && !validTags.includes(tag)) {
+                // fire-and-collect, don't block this product's processing on the write
+                checklistUpdates.push(saveDocument(productsColl, docId, { tag: "" }));
+                tag = "";
+            }
 
-        if (newProduct.isChecked && hasDayPassedSince(newProduct.checkedAt)) {
-            await setProductToChecklistInDatabase(family, newProduct, false, true);
+            const newProduct: Product = {
+                id: docId,
+                name: productDatabase.name,
+                description: productDatabase.description,
+                count: productDatabase.count,
+                imageUrl: productDatabase.imageUrl,
+                isRecurring: productDatabase.isRecurring,
+                addedByUserId,
+                addedByName,
+                isChecked: productDatabase.isChecked,
+                checkedAt: productDatabase.checkedAt,
+                tag,
+            };
 
-            newProduct.isChecked = false;
-            newProduct.checkedAt = null;
+            if (newProduct.isChecked && hasDayPassedSince(newProduct.checkedAt)) {
+                checklistUpdates.push(
+                    setProductToChecklistInDatabase(family, newProduct, false, true)
+                );
+                newProduct.isChecked = false;
+                newProduct.checkedAt = null;
+                checklistProductsIds = checklistProductsIds.filter(id => id !== newProduct.id);
+            }
 
-            checklistProductsIds = checklistProductsIds.filter(id => id !== newProduct.id);
-        }
+            return newProduct;
+        })
+    );
 
-        allProducts.push(newProduct);
-        if (checklistProductsIds.includes(docId))
-            checklistProducts.push(newProduct);
-    }
+    // Let the background writes (tag cleanup, checklist expiry) finish, but don't block the return on them individually
+    await Promise.all(checklistUpdates);
+
+    const checklistProducts = allProducts.filter(p => checklistProductsIds.includes(p.id));
 
     return { allProducts, checklistProducts };
 }
@@ -588,4 +601,17 @@ export async function renameTagInDatabase(family: Family, oldTag: string, newTag
             p.tag === oldTag ? { ...p, tag: newTag } : p
         ),
     };
+}
+
+const APP_VERSION: number = 9;
+export async function checkVersion(): Promise<boolean> {
+    const versionDoc = await loadDocument(collection("public"), "version");
+
+    if (!versionDoc) {
+        // fail open — don't block the app if the doc is missing
+        return true;
+    }
+
+    const minVersion = versionDoc.version as number;
+    return APP_VERSION >= minVersion;
 }
