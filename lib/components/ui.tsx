@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {ReactNode, useEffect, useState} from "react";
 import {
     ActivityIndicator,
     Image,
@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import {useTheme} from "@/theme/ThemeContext";
 import {BottomSheet as ExpoBottomSheet, RNHostView} from '@expo/ui';
+import {Ionicons} from "@expo/vector-icons";
 
 export function PrimaryButton({
                                   label,
@@ -52,15 +53,7 @@ export function Field({ label, ...props }: TextInputProps & { label: string }) {
     );
 }
 
-export function TopBar({
-                           title,
-                           action,
-                           onAction,
-                       }: {
-    title: string;
-    action?: string | null;
-    onAction?: () => void;
-}) {
+export function TopBar({children, title, action, onAction}: {children: ReactNode, title: string, action?: string, onAction?: () => void}) {
     const { colors } = useTheme();
     const styles = createStyles(colors);
 
@@ -70,6 +63,7 @@ export function TopBar({
                 <Image source={require('@/assets/icon.png')} style={{height: 40, width: 40}} />
                 <Text style={styles.brandText}>{title}</Text>
             </View>
+            {children}
             {action && (
                 <Pressable onPress={onAction} hitSlop={10}>
                     <Text style={styles.topAction}>{action}</Text>
@@ -231,6 +225,64 @@ export function TagsBar({ tags, selectedTags, onToggleTag, onSelectAllNone, isAl
                 styles={styles}
             />
         </ScrollView>
+    );
+}
+
+interface SearchBarProps {
+    value: string;
+    onChangeText: (text: string) => void;
+    placeholder?: string;
+    colors: any;
+}
+
+export function SearchBar({value, onChangeText, placeholder = "Search...", colors}: SearchBarProps) {
+    return (
+        <View
+            style={{
+                flex: 1,
+                minWidth: 0,
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: colors.surface,
+                borderRadius: 12,
+                paddingHorizontal: 12,
+                height: 44,
+                borderWidth: 1,
+                borderColor: colors.border,
+                marginLeft: 20,
+            }}
+        >
+            <Ionicons
+                name="search"
+                size={20}
+                color={colors.textSecondary}
+                style={{ marginRight: 8 }}
+            />
+            <TextInput
+                style={{
+                    flex: 1,
+                    fontSize: 16,
+                    color: colors.text,
+                    paddingVertical: 0,
+                }}
+                value={value}
+                onChangeText={onChangeText}
+                placeholder={placeholder}
+                placeholderTextColor={colors.textSecondary}
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="search"
+            />
+            {value.length > 0 && (
+                <Ionicons
+                    name="close-circle"
+                    size={20}
+                    color={colors.textSecondary}
+                    style={{ marginLeft: 8 }}
+                    onPress={() => onChangeText("")}
+                />
+            )}
+        </View>
     );
 }
 

@@ -1,23 +1,23 @@
 import React, {useMemo, useState} from "react";
-import {Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from "react-native";
+import {Alert, Keyboard, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View} from "react-native";
 import {useTheme} from "@/theme/ThemeContext";
 import {PromptModal, TagsBar} from "@/lib/components/ui";
+import {Product} from "@/lib/types";
 
-export function ProductList({
-                                products,
-                                checklistProducts,
-                                refreshing,
-                                onRefresh,
-                                isChecklist,
-                                tags,
-                                onAdd,
-                                onSelect,
-                                onToggle,
-                                onToggleChecklist,
-                                onCreateTag,
-                                onDeleteTag,
-                                onRenameTag,
-                            }) {
+export interface ProductListProps {
+    products: Product[];
+    checklistProducts: Product[];
+    refreshing: boolean;
+    onRefresh: () => void;
+    tags: string[];
+    onCreateTag: (tag: string) => void;
+    onDeleteTag: (tag: string) => void;
+    onRenameTag: (tag: string, newName: string) => void;
+    onSelect: (product: Product) => void;
+    searchQuery: string;
+}
+
+export function ProductList({props, isChecklist, onAdd, onToggle, onToggleChecklist}: {props: ProductListProps, isChecklist: boolean, onAdd: any, onToggle: any, onToggleChecklist: any}) {
     const { colors } = useTheme();
     const styles = createStyles(colors);
 
@@ -34,11 +34,11 @@ export function ProductList({
 
     const visible = useMemo(
         () =>
-            products.filter(
+            props.products.filter(
                 (item) =>
-                    selectedTags.length === 0 || selectedTags.includes(item.tag || ""),
+                    (selectedTags.length === 0 || selectedTags.includes(item.tag || "")) && (props.searchQuery == null || props.searchQuery.length === 0 || item.name.includes(props.searchQuery)),
             ),
-        [products, selectedTags],
+        [props.products, selectedTags, props.searchQuery],
     );
 
     const sections = useMemo(() => {
@@ -46,14 +46,14 @@ export function ProductList({
 
         for (const item of visible) {
             let key = item.tag || "";
-            if (key !== "" && !tags.includes(key)) {
+            if (key !== "" && !props.tags.includes(key)) {
                 key = ""; // orphaned tag — treat as untagged until next reload
             }
             if (!groups.has(key)) groups.set(key, []);
             groups.get(key).push(item);
         }
 
-        const order = ["", ...tags];
+        const order = ["", ...props.tags];
         const keys = [...groups.keys()].sort((a, b) => order.indexOf(a) - order.indexOf(b));
 
         return keys.map((key) => ({
@@ -61,20 +61,20 @@ export function ProductList({
             title: key === "" ? "UNTAGGED" : key.toUpperCase(),
             data: groups.get(key),
         }));
-    }, [visible, tags]);
+    }, [visible, props.tags]);
 
     function isProductInChecklist(item) {
-        return checklistProducts.some((w) => w.id === item.id);
+        return props.checklistProducts.some((w) => w.id === item.id);
     }
 
     function handleCreateTag(name) {
         setTagCreateModalVisible(false);
-        onCreateTag(name);
+        props.onCreateTag(name);
     }
 
     function handleRenameTag(name) {
         setTagRenameModalVisible(false);
-        onRenameTag(selectedRenameTag, name);
+        props.onRenameTag(selectedRenameTag, name);
     }
 
     function handleLongPressTag(tag) {
@@ -97,7 +97,7 @@ export function ProductList({
                     style: "destructive",
                     onPress: () => {
                         setSelectedTags((prev) => prev.filter((t) => t !== tag));
-                        onDeleteTag(tag);
+                        props.onDeleteTag(tag);
                     },
                 },
             ],
@@ -107,7 +107,7 @@ export function ProductList({
     return (
         <View style={staticStyles.root}>
             <TagsBar
-                tags={tags}
+                tags={props.tags}
                 selectedTags={selectedTags}
                 onToggleTag={toggleTag}
                 onSelectAllNone={() => setSelectedTags([])}
@@ -141,8 +141,9 @@ export function ProductList({
                 style={staticStyles.listScroll}
                 contentContainerStyle={staticStyles.list}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                    <RefreshControl refreshing={props.refreshing} onRefresh={props.onRefresh} />
                 }
+                onScrollBeginDrag={Keyboard.dismiss}
             >
                 {visible.length === 0 ? (
                     <EmptyState shopping={isChecklist} onAdd={onAdd} styles={styles} />
@@ -156,7 +157,7 @@ export function ProductList({
                                     item={item}
                                     isInChecklist={isProductInChecklist(item)}
                                     shopping={isChecklist}
-                                    onSelect={() => onSelect(item)}
+                                    onSelect={() => props.onSelect(item)}
                                     onToggle={() => onToggle(item)}
                                     onToggleChecklist={() => onToggleChecklist(item)}
                                     styles={styles}

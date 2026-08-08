@@ -1,27 +1,19 @@
 import React from "react";
-import {ProductList} from "../components/ProductList";
+import {ProductList, ProductListProps} from "../components/ProductList";
 import ListHeader from "../components/ListHeader";
 import {View} from "react-native";
 
-export default function ChecklistScreen({products, checklistProducts, refreshing, onRefresh, tags, onCreateTag, onDeleteTag, onRenameTag, openDetails, toggleProduct}) {
+export default function ChecklistScreen({props, toggleProduct}: {props: ProductListProps, toggleProduct: any}) {
     return (
         <View style={{ flexDirection: "column", flex: 1 }}>
             <ListHeader
                 title="Checklist"
-                text={`${products.filter((item) => item.isChecked).length} of ${products.length} items collected.`}
+                text={`${props.products.filter((item) => item.isChecked).length} of ${props.products.length} items collected.`}
             />
             <ProductList
-                products={products}
-                checklistProducts={checklistProducts}
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                tags={tags}
-                onCreateTag={onCreateTag}
-                onDeleteTag={onDeleteTag}
-                onRenameTag={onRenameTag}
+                props={props}
                 isChecklist={true}
                 onAdd={() => {}}
-                onSelect={openDetails}
                 onToggle={toggleProduct}
                 onToggleChecklist={() => {}}
             />

@@ -1,6 +1,6 @@
 import React, {useCallback, useRef, useState} from "react";
 import {Alert, Dimensions, Pressable, StyleSheet, Text, View,} from "react-native";
-import {LoadingIndicator, TopBar} from "@/lib/components/ui";
+import {LoadingIndicator, SearchBar, TopBar} from "@/lib/components/ui";
 import {BottomNav} from "@/lib/components/BottomNav";
 import {AddProductSheet, DetailsSheet, EditProductSheet} from "@/lib/components/ProductSheets";
 import {SettingsScreen} from "@/lib/screens/SettingsScreen";
@@ -28,6 +28,7 @@ import {useSnackbar} from "@/context/SnackbarContext";
 import {Family, Product, Profile} from "@/lib/types";
 import {useTheme} from "@/theme/ThemeContext";
 import PagerView from "react-native-pager-view";
+import {ProductListProps} from "@/lib/components/ProductList";
 
 const { width } = Dimensions.get("window");
 const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
@@ -41,6 +42,7 @@ export default function MainAppPage() {
     const [selected, setSelected] = useState(null);
     const [family, setFamily] = useState<Family>(null);
     const [profile, setProfile] = useState<Profile>(null);
+    const [searchQuery, setSearchQuery] = useState("");
 
     const { showSnackbar } = useSnackbar();
 
@@ -115,12 +117,47 @@ export default function MainAppPage() {
         );
     }
 
+    const pageProps: ProductListProps = {
+        products: family.allProducts,
+        checklistProducts: family.checklistProducts,
+        refreshing: refreshing,
+        onRefresh: onRefresh,
+        tags: family.tags,
+        onCreateTag: (tag: string) => {
+            createTagInDatabase(family, tag).then(newFamily => {
+                setFamily(newFamily);
+                log("Main App", "successfully created tag", showSnackbar);
+            }).catch(err => {
+                log("Main App", "failed to create tag: " + err.message, showSnackbar);
+            });
+        },
+        onDeleteTag: (tag: string) => {
+            deleteTagInDatabase(family, tag).then(newFamily => {
+                setFamily(newFamily);
+                log("Main App", "successfully deleted tag", showSnackbar);
+            }).catch(err => {
+                log("Main App", "failed to delete tag: " + err.message, showSnackbar);
+            });
+        },
+        onRenameTag: (tag: string, newName: string) => {
+            renameTagInDatabase(family, tag, newName).then(newFamily => {
+                setFamily(newFamily);
+                log("Main App", "successfully renamed tag", showSnackbar);
+            }).catch(err => {
+                log("Main App", "failed to rename tag: " + err.message, showSnackbar);
+            });
+        },
+        onSelect: openDetails,
+        searchQuery: searchQuery,
+    };
+
     return (
         <>
-            <TopBar
-                title={"SuperCart"}
-                onAction={signOut}
-            />
+            <TopBar title={"SuperCart"}>
+                {page < 2 &&
+                    <SearchBar value={searchQuery} onChangeText={setSearchQuery} colors={colors} placeholder="Search products..." />
+                }
+            </TopBar>
 
             <PagerView
                 ref={pagerRef}
@@ -133,37 +170,8 @@ export default function MainAppPage() {
             >
                 <Page active={page === 0}>
                     <GroceriesScreen
-                        products={family.allProducts}
-                        checklistProducts={family.checklistProducts}
-                        refreshing={refreshing}
-                        onRefresh={onRefresh}
-                        tags={family.tags}
-                        onCreateTag={(tag: string) => {
-                            createTagInDatabase(family, tag).then(newFamily => {
-                                setFamily(newFamily);
-                                log("Main App", "successfully created tag", showSnackbar);
-                            }).catch(err => {
-                                log("Main App", "failed to create tag: " + err.message, showSnackbar);
-                            });
-                        }}
-                        onDeleteTag={(tag: string) => {
-                            deleteTagInDatabase(family, tag).then(newFamily => {
-                                setFamily(newFamily);
-                                log("Main App", "successfully deleted tag", showSnackbar);
-                            }).catch(err => {
-                                log("Main App", "failed to delete tag: " + err.message, showSnackbar);
-                            });
-                        }}
-                        onRenameTag={(tag: string, newName: string) => {
-                            renameTagInDatabase(family, tag, newName).then(newFamily => {
-                                setFamily(newFamily);
-                                log("Main App", "successfully renamed tag", showSnackbar);
-                            }).catch(err => {
-                                log("Main App", "failed to rename tag: " + err.message, showSnackbar);
-                            });
-                        }}
+                        props={pageProps}
                         setSheet={setSheet}
-                        openDetails={openDetails}
                         toggleChecklist={(product: Product) => {
                             function isProductInChecklist(item: Product): boolean {
                                 return family.checklistProducts.some((w: Product) => w.id === item.id);
@@ -199,36 +207,7 @@ export default function MainAppPage() {
                 </Page>
                 <Page active={page === 1}>
                     <ChecklistScreen
-                        products={family.checklistProducts}
-                        checklistProducts={family.checklistProducts}
-                        refreshing={refreshing}
-                        onRefresh={onRefresh}
-                        tags={family.tags}
-                        onCreateTag={(tag: string) => {
-                            createTagInDatabase(family, tag).then(newFamily => {
-                                setFamily(newFamily);
-                                log("Main App", "successfully created tag", showSnackbar);
-                            }).catch(err => {
-                                log("Main App", "failed to create tag: " + err.message, showSnackbar);
-                            });
-                        }}
-                        onDeleteTag={(tag: string) => {
-                            deleteTagInDatabase(family, tag).then(newFamily => {
-                                setFamily(newFamily);
-                                log("Main App", "successfully deleted tag", showSnackbar);
-                            }).catch(err => {
-                                log("Main App", "failed to delete tag: " + err.message, showSnackbar);
-                            });
-                        }}
-                        onRenameTag={(tag: string, newName: string) => {
-                            renameTagInDatabase(family, tag, newName).then(newFamily => {
-                                setFamily(newFamily);
-                                log("Main App", "successfully renamed tag", showSnackbar);
-                            }).catch(err => {
-                                log("Main App", "failed to rename tag: " + err.message, showSnackbar);
-                            });
-                        }}
-                        openDetails={openDetails}
+                        props={pageProps}
                         toggleProduct={(product: Product) => {
                             const checkedAt: number | null = !product.isChecked ? Date.now() : null;
                             const updatedProduct: Product = {

@@ -89,7 +89,7 @@ export default function FamilyGatePage() {
 
     return (
         <>
-            <TopBar title="SuperCart" action="Log out" onAction={signOut} />
+            <TopBar title="SuperCart" action="Log out" onAction={signOut} children={null} />
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
                 <ScrollView style={staticStyles.content}>
                     <Text style={styles.title}>Choose your family</Text>

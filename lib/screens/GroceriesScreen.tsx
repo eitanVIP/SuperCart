@@ -1,9 +1,9 @@
 import React from "react";
-import {ProductList} from "../components/ProductList";
+import {ProductList, ProductListProps} from "../components/ProductList";
 import ListHeader from "../components/ListHeader";
 import {View} from "react-native";
 
-export default function GroceriesScreen({products, checklistProducts, refreshing, onRefresh, tags, onCreateTag, onDeleteTag, onRenameTag, setSheet, openDetails, toggleChecklist}) {
+export default function GroceriesScreen({props, setSheet, toggleChecklist}: {props: ProductListProps, setSheet: (sheet: string) => void, toggleChecklist: any}) {
     return (
         <View style={{ flexDirection: "column", flex: 1 }}>
             <ListHeader
@@ -11,17 +11,9 @@ export default function GroceriesScreen({products, checklistProducts, refreshing
                 text="Your family’s shared weekly list."
             />
             <ProductList
-                products={products}
-                checklistProducts={checklistProducts}
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                tags={tags}
-                onCreateTag={onCreateTag}
-                onDeleteTag={onDeleteTag}
-                onRenameTag={onRenameTag}
+                props={props}
                 isChecklist={false}
                 onAdd={() => setSheet("add")}
-                onSelect={openDetails}
                 onToggle={() => {}}
                 onToggleChecklist={toggleChecklist}
             />
